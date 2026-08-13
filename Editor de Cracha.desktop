@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Editor de Crachá
+Comment=Abre o editor de crachá no navegador
+Exec=bash "/home/ramal421/esse mesmo/editor-cracha/abrir_app.sh"
+Icon=text-html
+Terminal=false
+Categories=Utility;

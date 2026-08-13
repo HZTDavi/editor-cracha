@@ -1,0 +1,1667 @@
+<title>Editor de Crachá</title>
+<style>
+  @font-face { font-family: 'App Sans'; src: url(__FONT_SANS_REG__) format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Sans'; src: url(__FONT_SANS_BOLD__) format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Serif'; src: url(__FONT_SERIF_REG__) format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Serif'; src: url(__FONT_SERIF_BOLD__) format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Mono'; src: url(__FONT_MONO_REG__) format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Mono'; src: url(__FONT_MONO_BOLD__) format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Sans Alt'; src: url(__FONT_SANS2_REG__) format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Sans Alt'; src: url(__FONT_SANS2_BOLD__) format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Serif Alt'; src: url(__FONT_SERIF2_REG__) format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Serif Alt'; src: url(__FONT_SERIF2_BOLD__) format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Rounded'; src: url(__FONT_ROUNDED_REG__) format('opentype'); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Rounded'; src: url(__FONT_ROUNDED_BOLD__) format('opentype'); font-weight: 700; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Slab'; src: url(__FONT_SLAB_REG__) format('opentype'); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'App Slab'; src: url(__FONT_SLAB_BOLD__) format('opentype'); font-weight: 700; font-style: normal; font-display: swap; }
+
+  /* Dark is this tool's primary identity — a print-shop / ink-and-foil feel (deep warm
+     charcoal, gold foil accent). Light is the override, given equal care below. */
+  :root {
+    --paper: #17140F;
+    --surface: #221E17;
+    --ink: #EDE9E2;
+    --muted: #A89C89;
+    --accent: #E0A23D;
+    --accent-ink: #1C1407;
+    --line: #392F21;
+    --warn: #DD6B44;
+    --warn-bg: #3A2418;
+    --shadow: 0 1px 2px rgba(0,0,0,0.5), 0 14px 34px -16px rgba(0,0,0,0.75);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --paper: #F2EDE3; --surface: #FFFDF8; --ink: #221D14; --muted: #6C6252;
+      --accent: #B57A22; --accent-ink: #FFFBF2; --line: #E3D9C7;
+      --warn: #B24B27; --warn-bg: #F8EAE0;
+      --shadow: 0 1px 2px rgba(34,29,20,0.07), 0 8px 24px -12px rgba(34,29,20,0.2);
+    }
+  }
+  :root[data-theme="light"] {
+    --paper: #F2EDE3; --surface: #FFFDF8; --ink: #221D14; --muted: #6C6252;
+    --accent: #B57A22; --accent-ink: #FFFBF2; --line: #E3D9C7;
+    --warn: #B24B27; --warn-bg: #F8EAE0;
+    --shadow: 0 1px 2px rgba(34,29,20,0.07), 0 8px 24px -12px rgba(34,29,20,0.2);
+  }
+  :root[data-theme="dark"] {
+    --paper: #17140F; --surface: #221E17; --ink: #EDE9E2; --muted: #A89C89;
+    --accent: #E0A23D; --accent-ink: #1C1407; --line: #392F21;
+    --warn: #DD6B44; --warn-bg: #3A2418;
+    --shadow: 0 1px 2px rgba(0,0,0,0.5), 0 14px 34px -16px rgba(0,0,0,0.75);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: ui-sans-serif, "Segoe UI", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.45;
+  }
+  .page { max-width: 1120px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  header.top { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 2rem; }
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.72rem;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 600;
+  }
+  h1 {
+    font-family: "App Slab", ui-serif, Georgia, serif; font-size: clamp(1.7rem, 3vw, 2.3rem);
+    font-weight: 700; margin: 0; text-wrap: balance;
+  }
+  h2.section-title {
+    font-family: "App Slab", ui-serif, Georgia, serif; font-size: 1.3rem; font-weight: 700;
+    margin: 0; text-wrap: balance;
+  }
+  .step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.4em; height: 1.4em; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
+    font-family: ui-monospace, monospace; font-size: 0.6em; font-weight: 700; margin-right: 0.4em;
+    vertical-align: middle;
+  }
+  .sub { color: var(--muted); font-size: 0.98rem; max-width: 68ch; margin: 0; }
+
+  .workbench { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 1.5rem; align-items: start; }
+  @media (max-width: 760px) { .workbench { grid-template-columns: 1fr; } }
+
+  .stage {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 1.25rem; min-height: 320px;
+    display: flex; flex-direction: column; gap: 0.9rem;
+  }
+  .stage-empty {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.9rem; color: var(--muted); text-align: center; padding: 3rem 1rem;
+    border: 1.5px dashed var(--line); border-radius: 10px;
+  }
+  .upload-btn, .btn {
+    font: inherit; font-weight: 600; font-size: 0.9rem; border-radius: 8px;
+    border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+    padding: 0.6rem 1.1rem; cursor: pointer; transition: filter 0.15s ease;
+  }
+  .upload-btn:hover, .btn:hover { filter: brightness(1.08); }
+  .upload-btn:focus-visible, .btn:focus-visible, input:focus-visible,
+  select:focus-visible, .canvas-wrap:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .btn.secondary { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn.tiny { padding: 0.3rem 0.6rem; font-size: 0.78rem; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+  input[type="file"] { display: none; }
+
+  .canvas-wrap {
+    position: relative; width: 100%; line-height: 0; border-radius: 8px; overflow: hidden;
+    background: repeating-conic-gradient(var(--paper) 0% 25%, var(--surface) 0% 50%) 0 0 / 18px 18px;
+  }
+  canvas#view { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: none; }
+  .hint { font-size: 0.82rem; color: var(--muted); }
+
+  #templateTabs { align-items: center; }
+  .tpl-chip {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+    padding: 0.25rem 0.3rem 0.25rem 0.6rem; cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .tpl-chip:hover { border-color: var(--accent); }
+  .tpl-chip.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  .tpl-chip .tpl-name {
+    font: inherit; font-size: 0.82rem; font-weight: 600; color: var(--ink);
+    background: transparent; border: none; border-radius: 4px; padding: 0.15rem 0.25rem; cursor: text;
+  }
+  .tpl-chip .tpl-name:hover, .tpl-chip .tpl-name:focus { background: var(--surface); }
+  .tpl-chip .tpl-name:focus { outline: 1px solid var(--accent); }
+  .tpl-chip .tpl-del {
+    background: none; border: none; color: var(--muted); font-size: 0.95rem; line-height: 1;
+    cursor: pointer; padding: 0.1rem 0.3rem;
+  }
+  .tpl-chip .tpl-del:hover { color: var(--warn); }
+  .tpl-add {
+    font: inherit; font-size: 0.82rem; font-weight: 600; color: var(--accent);
+    background: transparent; border: 1px dashed var(--accent); border-radius: 8px;
+    padding: 0.3rem 0.7rem; cursor: pointer; white-space: nowrap;
+  }
+  .tpl-add:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+  .picking-banner {
+    position: absolute; top: 0; left: 0; right: 0; padding: 0.6rem 0.8rem;
+    background: color-mix(in srgb, var(--accent) 88%, black 0%); color: var(--accent-ink);
+    font-size: 0.82rem; font-weight: 600; text-align: center; z-index: 6; line-height: 1.4;
+  }
+
+  .popover {
+    position: absolute; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; box-shadow: var(--shadow); padding: 0.7rem; display: flex;
+    flex-direction: column; gap: 0.5rem; z-index: 5; width: 280px;
+    line-height: 1.4; /* .canvas-wrap sets line-height:0 to kill inline-canvas gap — reset it here so labels/inputs don't inherit that collapse */
+  }
+  .popover label.cap { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .popover input[type="text"], .popover textarea, textarea.select {
+    font: inherit; font-size: 0.9rem; line-height: 1.4; padding: 0.4rem 0.55rem; border-radius: 6px;
+    border: 1px solid var(--line); background: var(--paper); color: var(--ink); width: 100%;
+    resize: vertical;
+  }
+  .popover .row { display: flex; gap: 0.4rem; }
+
+  aside.rail { display: flex; flex-direction: column; gap: 1rem; }
+  .panel {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 1rem 1.1rem; box-shadow: var(--shadow);
+  }
+  .panel h2 {
+    font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+    margin: 0 0 0.7rem; font-weight: 600;
+  }
+
+  .seg { display: flex; gap: 0.4rem; }
+  .seg label {
+    flex: 1; text-align: center; font-size: 0.8rem; border: 1px solid var(--line); border-radius: 7px;
+    padding: 0.35rem 0.3rem; cursor: pointer; color: var(--muted); position: relative;
+  }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label:has(input:checked) {
+    border-color: var(--accent); color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+
+  select.select {
+    font: inherit; font-size: 0.85rem; padding: 0.4rem 0.5rem; border-radius: 7px;
+    border: 1px solid var(--line); background: var(--paper); color: var(--ink); width: 100%;
+  }
+
+  ul.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; }
+  ul.list li {
+    display: flex; gap: 0.5rem; align-items: center; padding: 0.35rem 0.4rem;
+    border-radius: 7px; cursor: pointer; border: 1px solid transparent;
+  }
+  ul.list li:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  ul.list li.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  ul.list .lbl { font-weight: 700; color: var(--accent); flex-shrink: 0; }
+  ul.list .txt { color: var(--ink); word-break: break-word; white-space: pre-line; flex: 1; }
+  ul.list .del { color: var(--muted); background: none; border: none; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0.1rem 0.3rem; }
+  ul.list .del:hover { color: var(--warn); }
+  .empty-note { color: var(--muted); font-size: 0.85rem; }
+
+  #inspector { margin-top: 0.9rem; }
+  .inspector-divider {
+    display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.7rem;
+    font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); font-weight: 700;
+  }
+  .inspector-divider::before { content: ""; flex: 0 0 0.9rem; height: 1px; background: var(--accent); opacity: 0.4; }
+  .inspector-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .inspector-divider span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+
+  .status {
+    display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600;
+    padding: 0.25rem 0.6rem; border-radius: 99px; background: var(--warn-bg); color: var(--warn);
+    width: fit-content;
+  }
+  .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .status.ok { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+
+  .stack { display: flex; flex-direction: column; gap: 0.6rem; }
+  .row { display: flex; gap: 0.6rem; }
+  .row > * { flex: 1; }
+
+  .batch {
+    margin-top: 2rem; background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 1.5rem; display: flex; flex-direction: column; gap: 1.1rem;
+  }
+  .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.8rem; }
+  .field-grid label { font-size: 0.78rem; color: var(--muted); display: flex; flex-direction: column; gap: 0.3rem; }
+  .field-grid input, .field-grid select {
+    font: inherit; font-size: 0.9rem; padding: 0.45rem 0.55rem; border-radius: 7px;
+    border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .rec {
+    font-size: 0.86rem; color: var(--ink); background: color-mix(in srgb, var(--accent) 9%, transparent);
+    border-radius: 8px; padding: 0.6rem 0.8rem; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem;
+  }
+  .rec b { color: var(--accent); }
+  details.adv summary {
+    cursor: pointer; font-size: 0.82rem; color: var(--muted); font-weight: 600; margin-bottom: 0.6rem;
+  }
+  .fill-box {
+    border: 1px solid var(--line); border-radius: 10px; padding: 0.8rem 0.9rem;
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
+  }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+  table.instances { border-collapse: collapse; width: 100%; font-size: 0.86rem; min-width: 420px; }
+  table.instances th, table.instances td {
+    padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap;
+  }
+  table.instances th {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+    background: var(--paper);
+  }
+  table.instances input {
+    font: inherit; font-size: 0.85rem; padding: 0.3rem 0.4rem; border-radius: 6px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink); width: 100%; min-width: 110px;
+  }
+  table.instances td.idx { color: var(--muted); font-variant-numeric: tabular-nums; }
+  table.instances .del { color: var(--muted); background: none; border: none; cursor: pointer; font-size: 1rem; }
+  table.instances .del:hover { color: var(--warn); }
+
+  .pages { display: flex; flex-wrap: wrap; gap: 1rem; }
+  .page-card {
+    border: 1px solid var(--line); border-radius: 10px; padding: 0.7rem; display: flex;
+    flex-direction: column; gap: 0.5rem; align-items: center; width: 190px;
+  }
+  .page-card img { width: 100%; border: 1px solid var(--line); border-radius: 4px; background: white; }
+  .page-card span { font-size: 0.78rem; color: var(--muted); }
+
+  footer.note { margin-top: 2rem; font-size: 0.8rem; color: var(--muted); max-width: 68ch; }
+  footer.note ul { margin: 0.4rem 0 0; padding-left: 1.1rem; }
+</style>
+
+<div class="page">
+  <header class="top">
+    <span class="eyebrow">Editor de crachá · roda no navegador</span>
+    <h1><span class="step-num">1</span>Troque o texto, mantenha o resto.</h1>
+    <p class="sub">Envie a imagem, arraste um retângulo sobre cada texto que quer trocar (nome, cargo, data...). Depois arraste o próprio texto pra reposicionar, ajuste a fonte, e gere uma folha A4 com vários crachás — cada um com valores diferentes.</p>
+  </header>
+
+  <div class="workbench">
+    <div class="stage">
+      <div id="emptyState" class="stage-empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="9" r="2.4"/>
+          <path d="M8 16.5c0-1.9 1.8-3 4-3s4 1.1 4 3"/>
+        </svg>
+        <div><strong>Nenhuma imagem ainda</strong><div class="hint">PNG, JPG ou WebP</div></div>
+        <label class="upload-btn" for="fileInput" id="firstUploadLabel">Escolher imagem</label>
+      </div>
+
+      <div id="stageLoaded" style="display:none;" class="stack">
+        <div class="row" id="templateTabs" style="flex-wrap:wrap; gap:0.4rem;"></div>
+        <div class="row" style="align-items:center; justify-content:space-between;">
+          <span class="hint" id="stageHint">Arraste um retângulo sobre o texto a trocar</span>
+          <div class="row" style="flex:0 0 auto; gap:0.5rem;">
+            <button class="btn secondary tiny" id="upscaleBtn" title="Redimensiona com interpolação de alta qualidade e realça bordas">Aumentar resolução (2×)</button>
+            <label class="upload-btn" for="fileInput" id="replaceImageLabel" style="font-size:0.82rem; padding:0.4rem 0.8rem;">Trocar imagem deste modelo</label>
+          </div>
+        </div>
+        <div class="canvas-wrap" id="canvasWrap" tabindex="0">
+          <canvas id="view"></canvas>
+          <div id="pickingBanner" class="picking-banner" style="display:none;">Selecionando letra — arraste bem justo ao redor de UMA letra (Esc cancela)</div>
+          <div id="popover" class="popover" style="display:none;">
+            <div>
+              <label class="cap">Nome do campo</label>
+              <input id="popLabel" type="text" placeholder="Nome, Cargo, Data..." />
+            </div>
+            <div>
+              <label class="cap">Texto (Shift+Enter quebra linha)</label>
+              <textarea id="popText" rows="4" placeholder="Texto novo"></textarea>
+            </div>
+            <div class="row">
+              <button class="btn tiny" id="popApply">Aplicar</button>
+              <button class="btn secondary tiny" id="popCancel">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="rail">
+      <div class="panel">
+        <h2>Campos</h2>
+        <ul class="list" id="fieldsList"></ul>
+        <p class="empty-note" id="fieldsEmpty">Nenhum ainda — arraste um retângulo na imagem.</p>
+
+        <div id="inspector" style="display:none;">
+          <div class="inspector-divider"><span id="inspectorCaption">Editando</span></div>
+          <div class="stack">
+            <textarea id="inspText" class="select" rows="2" placeholder="Texto (Shift+Enter quebra linha)"></textarea>
+            <select id="inspFamily" class="select">
+              <option value="sans">Sem serifa (padrão)</option>
+              <option value="sans2">Sem serifa (estilo Arial)</option>
+              <option value="serif">Com serifa (padrão)</option>
+              <option value="serif2">Com serifa (estilo Times)</option>
+              <option value="rounded">Geométrica arredondada</option>
+              <option value="slab">Serifada grossa (slab)</option>
+              <option value="mono">Monoespaçada</option>
+            </select>
+            <button class="btn secondary tiny" id="loadFontBtn">+ Carregar fonte (.ttf/.otf/.woff)</button>
+            <div class="seg">
+              <label><input type="radio" name="inspWeight" value="auto" /><span>Auto</span></label>
+              <label><input type="radio" name="inspWeight" value="bold" /><span>Negrito</span></label>
+              <label><input type="radio" name="inspWeight" value="normal" /><span>Normal</span></label>
+            </div>
+            <label class="hint" style="display:flex; align-items:center; gap:0.4rem;">
+              <input type="checkbox" id="inspItalic" style="width:auto;" /> Itálico
+            </label>
+            <div class="row" style="align-items:center;">
+              <span class="hint" style="flex:1;">Tamanho da letra</span>
+              <button class="btn secondary tiny" id="fontSizeDown" title="Diminuir a letra">A−</button>
+              <button class="btn secondary tiny" id="fontSizeUp" title="Aumentar a letra">A+</button>
+              <button class="btn secondary tiny" id="fontSizeAuto" title="Voltar a ajustar automaticamente à caixa">Auto</button>
+            </div>
+            <button class="btn secondary tiny" id="pickLetterBtn">Detectar estilo por uma letra</button>
+            <button class="btn secondary tiny" id="deleteFieldBtn">Remover campo</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel stack">
+        <span class="status" id="statusChip">Aguardando imagem</span>
+        <button class="btn" id="downloadBtn" disabled>Baixar imagem</button>
+        <button class="btn secondary" id="resetBtn" disabled>Recomeçar do zero</button>
+        <span class="hint">Ctrl+Z desfaz a última alteração.</span>
+      </div>
+    </aside>
+  </div>
+
+  <section class="batch" id="batchSection" style="display:none;">
+    <div>
+      <span class="eyebrow">Impressão em lote</span>
+      <h2 class="section-title"><span class="step-num">2</span>Gerar folha A4 com vários crachás</h2>
+      <p class="sub">Defina o tamanho físico do crachá, veja quantos cabem na folha, preencha os valores de cada campo pra cada crachá e gere a(s) folha(s) pra imprimir.</p>
+    </div>
+
+    <div class="field-grid">
+      <label>Largura do crachá (cm)<input id="badgeW" type="number" min="1" step="0.1" value="9" /></label>
+      <label>Altura do crachá (cm)<input id="badgeH" type="number" min="1" step="0.1" value="5.4" /></label>
+      <label>Orientação da folha
+        <select id="orientationSel">
+          <option value="auto">Automática (recomendada)</option>
+          <option value="retrato">Retrato</option>
+          <option value="paisagem">Paisagem</option>
+        </select>
+      </label>
+      <label>Qualidade (DPI)
+        <select id="dpiSel">
+          <option value="150">150 (rascunho)</option>
+          <option value="300" selected>300 (impressão)</option>
+        </select>
+      </label>
+    </div>
+
+    <details class="adv">
+      <summary>Avançado: margens e espaçamento</summary>
+      <div class="field-grid">
+        <label>Margem da folha (cm)<input id="marginMm" type="number" min="0" step="0.1" value="0.8" /></label>
+        <label>Espaço entre crachás (cm)<input id="gapMm" type="number" min="0" step="0.1" value="0.4" /></label>
+      </div>
+    </details>
+
+    <div class="fill-box">
+      <label style="display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.9rem;">
+        <input type="checkbox" id="fillRemainingChk" style="width:auto;" />
+        Preencher o espaço sobrando com crachás menores (continua a mesma lista)
+      </label>
+      <div class="field-grid" id="fillSizeInputs" style="display:none; margin-top:0.6rem;">
+        <label>Largura do menor (cm)<input id="smallW" type="number" min="1" step="0.1" value="4.5" /></label>
+        <label>Altura do menor (cm)<input id="smallH" type="number" min="1" step="0.1" value="2.7" /></label>
+      </div>
+    </div>
+
+    <div class="rec" id="recBox"></div>
+
+    <div class="table-wrap">
+      <table class="instances" id="instancesTable"></table>
+    </div>
+    <div class="row" style="max-width:420px;">
+      <button class="btn secondary" id="addRowBtn">+ Adicionar crachá</button>
+      <button class="btn" id="generateBtn">Gerar folha(s)</button>
+    </div>
+
+    <div class="pages" id="pagesOutput"></div>
+  </section>
+
+  <footer class="note">
+    Tudo roda localmente no seu navegador — nenhuma imagem é enviada a servidor nenhum.
+    <ul>
+      <li>Com um campo selecionado, arraste os quadradinhos nos cantos da caixa pra redimensionar a área do texto, e use "A−"/"A+" no painel pra ajustar o tamanho da letra manualmente (independente da caixa).</li>
+      <li>Remoção de texto por reconstrução de fundo — lê uma área ampla ao redor pra entender a cor real do fundo (inclusive em texturas/fotos), mas só apaga dentro do retângulo que você desenhar.</li>
+      <li>"Detectar estilo por uma letra" é uma estimativa (peso, serifa, inclinação) a partir do desenho da letra, não uma identificação exata da fonte comercial.</li>
+      <li>"Aumentar resolução" reamostra com interpolação de alta qualidade e realça bordas — melhora nitidez percebida, mas não inventa detalhe novo (não é super-resolução por IA).</li>
+      <li>Fontes carregadas por arquivo ficam salvas neste navegador quando possível, pra não precisar recarregar toda vez — mas o arquivo da fonte nunca sai do seu computador.</li>
+      <li>A folha A4 é paginada automaticamente se você tiver mais crachás do que cabem numa página.</li>
+    </ul>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const fileInput = document.createElement("input");
+  fileInput.type = "file"; fileInput.accept = "image/*"; fileInput.id = "fileInput";
+  document.querySelector(".page").appendChild(fileInput);
+
+  const emptyState = document.getElementById("emptyState");
+  const stageLoaded = document.getElementById("stageLoaded");
+  const stageHint = document.getElementById("stageHint");
+  const view = document.getElementById("view");
+  const vctx = view.getContext("2d", { willReadFrequently: true });
+  const pickingBanner = document.getElementById("pickingBanner");
+  const popover = document.getElementById("popover");
+  const popLabel = document.getElementById("popLabel");
+  const popText = document.getElementById("popText");
+  const popApply = document.getElementById("popApply");
+  const popCancel = document.getElementById("popCancel");
+  const fieldsList = document.getElementById("fieldsList");
+  const fieldsEmpty = document.getElementById("fieldsEmpty");
+  const inspector = document.getElementById("inspector");
+  const inspText = document.getElementById("inspText");
+  const inspFamily = document.getElementById("inspFamily");
+  const loadFontBtn = document.getElementById("loadFontBtn");
+  const inspItalic = document.getElementById("inspItalic");
+  const pickLetterBtn = document.getElementById("pickLetterBtn");
+  const deleteFieldBtn = document.getElementById("deleteFieldBtn");
+  const fontSizeDownBtn = document.getElementById("fontSizeDown");
+  const fontSizeUpBtn = document.getElementById("fontSizeUp");
+  const fontSizeAutoBtn = document.getElementById("fontSizeAuto");
+  const statusChip = document.getElementById("statusChip");
+  const downloadBtn = document.getElementById("downloadBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const upscaleBtn = document.getElementById("upscaleBtn");
+  const batchSection = document.getElementById("batchSection");
+  const badgeWInput = document.getElementById("badgeW");
+  const badgeHInput = document.getElementById("badgeH");
+  const marginMmInput = document.getElementById("marginMm");
+  const gapMmInput = document.getElementById("gapMm");
+  const orientationSel = document.getElementById("orientationSel");
+  const dpiSel = document.getElementById("dpiSel");
+  const fillRemainingChk = document.getElementById("fillRemainingChk");
+  const smallWInput = document.getElementById("smallW");
+  const smallHInput = document.getElementById("smallH");
+  const recBox = document.getElementById("recBox");
+  const instancesTable = document.getElementById("instancesTable");
+  const addRowBtn = document.getElementById("addRowBtn");
+  const generateBtn = document.getElementById("generateBtn");
+  const pagesOutput = document.getElementById("pagesOutput");
+
+  const FONT_STACKS = {
+    sans: '"App Sans", ui-sans-serif, system-ui, sans-serif',
+    serif: '"App Serif", ui-serif, Georgia, serif',
+    mono: '"App Mono", ui-monospace, monospace',
+    sans2: '"App Sans Alt", Arial, sans-serif',
+    serif2: '"App Serif Alt", "Times New Roman", serif',
+    rounded: '"App Rounded", ui-sans-serif, sans-serif',
+    slab: '"App Slab", ui-serif, serif',
+  };
+
+  // The app can hold several templates (different badge designs) at once. Only the ACTIVE
+  // template's data lives in the loose globals below — switching templates snapshots the
+  // current globals into `templates[]` and restores the target template's data back out.
+  let templates = [];
+  let activeTemplateId = null;
+  let nextTemplateId = 1;
+  let pendingUploadMode = "replace";
+
+  let original = null;      // untouched uploaded image, natural res (capped)
+  let cleanedBase = null;   // working canvas: original with all field zones inpainted
+  let fields = [];          // {id, label, box:{x,y,w,h}, x, y, text, family, weightOverride(null|true|false), autoBold, italic, _bbox}
+  let instances = [{}];     // [{fieldId: text}]
+  let nextId = 1;
+  let selectedId = null;
+  let history = [];         // undo stack
+  let drag = null;
+  let moving = null;        // {field, startX, startY, fieldStartX, fieldStartY, moved}
+  let picking = false;
+
+  function snapshotActive() {
+    const t = templates.find((x) => x.id === activeTemplateId);
+    if (!t) return;
+    t.original = original; t.cleanedBase = cleanedBase;
+    t.fields = fields; t.instances = instances;
+    t.selectedId = selectedId; t.history = history;
+  }
+
+  function restoreTemplate(id) {
+    const t = templates.find((x) => x.id === id);
+    if (!t) return;
+    activeTemplateId = id;
+    original = t.original; cleanedBase = t.cleanedBase;
+    fields = t.fields; instances = t.instances;
+    selectedId = t.selectedId; history = t.history;
+    renderTemplateTabs();
+    renderFieldsList(); renderInspector(); renderInstancesTable(); updateRecommendation();
+    redraw();
+    downloadBtn.disabled = false;
+    resetBtn.disabled = false;
+  }
+
+  function renderTemplateTabs() {
+    const tabs = document.getElementById("templateTabs");
+    tabs.innerHTML = "";
+    templates.forEach((t) => {
+      const chip = document.createElement("div");
+      chip.className = "tpl-chip" + (t.id === activeTemplateId ? " active" : "");
+      const nameInput = document.createElement("input");
+      nameInput.type = "text"; nameInput.value = t.name; nameInput.className = "tpl-name";
+      nameInput.size = Math.max(7, Math.min(24, t.name.length + 1));
+      nameInput.addEventListener("input", () => { nameInput.size = Math.max(7, Math.min(24, nameInput.value.length + 1)); });
+      nameInput.addEventListener("change", () => { t.name = nameInput.value || t.name; });
+      chip.appendChild(nameInput);
+      if (templates.length > 1) {
+        const del = document.createElement("button");
+        del.className = "tpl-del"; del.textContent = "×"; del.title = "Remover este modelo";
+        del.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const idx = templates.findIndex((x) => x.id === t.id);
+          templates.splice(idx, 1);
+          if (activeTemplateId === t.id) {
+            const next = templates[Math.max(0, idx - 1)] || templates[0];
+            if (next) restoreTemplate(next.id);
+            else { templates = []; activeTemplateId = null; showEmptyState(); }
+          } else {
+            renderTemplateTabs();
+          }
+          updateBatchVisibility();
+        });
+        chip.appendChild(del);
+      }
+      chip.addEventListener("click", () => {
+        if (t.id === activeTemplateId) return;
+        snapshotActive();
+        restoreTemplate(t.id);
+      });
+      tabs.appendChild(chip);
+    });
+    const addBtn = document.createElement("button");
+    addBtn.className = "tpl-add"; addBtn.textContent = "+ Novo modelo"; addBtn.title = "Adicionar outro modelo de crachá";
+    addBtn.addEventListener("click", () => {
+      pendingUploadMode = "new";
+      fileInput.click();
+    });
+    tabs.appendChild(addBtn);
+  }
+
+  function updateBatchVisibility() {
+    const any = fields.length > 0 || templates.some((t) => t.id !== activeTemplateId && t.fields && t.fields.length > 0);
+    batchSection.style.display = any ? "flex" : "none";
+  }
+
+  function showEmptyState() {
+    emptyState.style.display = "flex";
+    stageLoaded.style.display = "none";
+    downloadBtn.disabled = true; resetBtn.disabled = true;
+    batchSection.style.display = "none";
+  }
+
+  function setStatus(text, ok) {
+    statusChip.textContent = text;
+    statusChip.classList.toggle("ok", !!ok);
+  }
+
+  function accentColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#E0A23D";
+  }
+
+  function naturalPoint(evt) {
+    const rect = view.getBoundingClientRect();
+    const cx = (evt.touches ? evt.touches[0].clientX : evt.clientX) - rect.left;
+    const cy = (evt.touches ? evt.touches[0].clientY : evt.clientY) - rect.top;
+    return {
+      x: Math.round((cx / rect.width) * cleanedBase.width),
+      y: Math.round((cy / rect.height) * cleanedBase.height),
+    };
+  }
+
+  // -------------------------------------------------------------------
+  // Font fit + draw (shared by live view and A4 sheet rendering)
+  // -------------------------------------------------------------------
+  function fontString(size, field) {
+    const weight = field.weightOverride === null ? (field.autoBold ? "700" : "400") : (field.weightOverride ? "700" : "400");
+    const style = field.italic ? "italic " : "";
+    return `${style}${weight} ${size}px ${FONT_STACKS[field.family] || FONT_STACKS.sans}`;
+  }
+
+  // `text` may contain "\n" (Shift+Enter in the text fields) — each line is measured and
+  // later centered independently; the whole block is fit and vertically centered as one.
+  // `scale` converts a manual fontSizeOverride (stored in natural/canvas pixels) into
+  // whatever space this call is drawing into — 1 for the live view, bsx/bsy for the A4 sheet.
+  function fitFont(ctx, text, boxW, boxH, field, scale) {
+    scale = scale || 1;
+    const lines = String(text).split("\n");
+
+    if (field.fontSizeOverride) {
+      const size = field.fontSizeOverride * scale;
+      ctx.font = fontString(size, field);
+      const widths = lines.map((l) => ctx.measureText(l).width);
+      const sample = ctx.measureText("Ag");
+      const ascent = sample.fontBoundingBoxAscent || size * 0.8;
+      const descent = sample.fontBoundingBoxDescent || size * 0.2;
+      const lineHeight = (ascent + descent) * 1.15;
+      return { size, lines, widths, ascent, descent, lineHeight, totalHeight: lineHeight * lines.length, width: Math.max(...widths) };
+    }
+
+    let size = Math.max(8, Math.floor((boxH / lines.length) * 0.82));
+    let widths, ascent, descent, lineHeight, totalHeight;
+    while (size > 7) {
+      ctx.font = fontString(size, field);
+      widths = lines.map((l) => ctx.measureText(l).width);
+      const sample = ctx.measureText("Ag");
+      ascent = sample.fontBoundingBoxAscent || size * 0.8;
+      descent = sample.fontBoundingBoxDescent || size * 0.2;
+      lineHeight = (ascent + descent) * 1.15;
+      totalHeight = lineHeight * lines.length;
+      if (Math.max(...widths) <= boxW * 1.06 && totalHeight <= boxH * 1.2) break;
+      size -= 1;
+    }
+    return { size, lines, widths, ascent, descent, lineHeight, totalHeight, width: Math.max(...widths) };
+  }
+
+  function drawFieldText(ctx, field, text, x, y, boxW, boxH, scale) {
+    const fit = fitFont(ctx, text, boxW, boxH, field, scale);
+    if (!scale || scale === 1) field._lastFitSize = fit.size; // remembers the live auto-fit size, so "A+/A-" has a sane starting point
+    ctx.font = fontString(fit.size, field);
+    ctx.fillStyle = field.color || "rgb(20,20,20)";
+    ctx.textBaseline = "alphabetic";
+    const blockTop = y + (boxH - fit.totalHeight) / 2;
+    let minX = Infinity;
+    fit.lines.forEach((line, i) => {
+      const drawX = x + Math.max(0, (boxW - fit.widths[i]) / 2);
+      const drawY = blockTop + i * fit.lineHeight + fit.ascent;
+      ctx.fillText(line, drawX, drawY);
+      minX = Math.min(minX, drawX);
+    });
+    return { x: minX === Infinity ? x : minX, y: blockTop, width: fit.width, height: fit.totalHeight };
+  }
+
+  // -------------------------------------------------------------------
+  // Rendering
+  // -------------------------------------------------------------------
+  function redraw() {
+    view.width = cleanedBase.width;
+    view.height = cleanedBase.height;
+
+    if (picking) {
+      vctx.drawImage(original, 0, 0);
+    } else {
+      vctx.drawImage(cleanedBase, 0, 0);
+      fields.forEach((f) => {
+        drawFieldText(vctx, f, f.text || "", f.x, f.y, f.box.w, f.box.h);
+        // hit/selection box tracks the full field slot (not just the glyph pixels) so it's
+        // easy to grab-and-drag even when the text is short or centered inside a wide box.
+        f._bbox = { x: f.x, y: f.y, width: f.box.w, height: f.box.h };
+        if (f.id === selectedId) {
+          const b = f._bbox;
+          vctx.save();
+          vctx.strokeStyle = accentColor();
+          vctx.lineWidth = Math.max(1.5, cleanedBase.width / 500);
+          vctx.setLineDash([5, 3]);
+          vctx.strokeRect(b.x - 4, b.y - 4, b.width + 8, b.height + 8);
+          vctx.setLineDash([]);
+          const hs = Math.max(6, cleanedBase.width / 200);
+          vctx.fillStyle = accentColor();
+          [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]].forEach(([cx, cy]) => {
+            vctx.fillRect(cx - hs / 2, cy - hs / 2, hs, hs);
+          });
+          vctx.restore();
+        }
+      });
+    }
+
+    if (drag) {
+      const x = Math.min(drag.x1, drag.x2), y = Math.min(drag.y1, drag.y2);
+      const w = Math.abs(drag.x2 - drag.x1), h = Math.abs(drag.y2 - drag.y1);
+      vctx.save();
+      vctx.strokeStyle = accentColor();
+      vctx.lineWidth = Math.max(2, cleanedBase.width / 300);
+      vctx.setLineDash([6, 4]);
+      vctx.strokeRect(x, y, w, h);
+      vctx.restore();
+    }
+  }
+
+  // -------------------------------------------------------------------
+  // Load image
+  // -------------------------------------------------------------------
+  function loadImage(file, mode) {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 2200;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > MAX || h > MAX) {
+        const r = Math.min(MAX / w, MAX / h);
+        w = Math.round(w * r); h = Math.round(h * r);
+      }
+      const newOriginal = document.createElement("canvas");
+      newOriginal.width = w; newOriginal.height = h;
+      newOriginal.getContext("2d").drawImage(img, 0, 0, w, h);
+      const newCleaned = document.createElement("canvas");
+      newCleaned.width = w; newCleaned.height = h;
+      newCleaned.getContext("2d").drawImage(newOriginal, 0, 0);
+      URL.revokeObjectURL(url);
+
+      if (mode === "new") {
+        snapshotActive();
+        const t = { id: nextTemplateId++, name: `Crachá ${templates.length + 1}` };
+        templates.push(t);
+        activeTemplateId = t.id;
+      }
+      original = newOriginal; cleanedBase = newCleaned;
+      fields = []; instances = [{}]; selectedId = null; history = [];
+
+      emptyState.style.display = "none";
+      stageLoaded.style.display = "flex";
+      renderTemplateTabs();
+      renderFieldsList(); renderInspector(); renderInstancesTable(); updateRecommendation();
+      updateBatchVisibility();
+      redraw();
+      setStatus("Imagem carregada — arraste um retângulo", false);
+      downloadBtn.disabled = true; resetBtn.disabled = false;
+    };
+    img.src = url;
+  }
+  document.getElementById("firstUploadLabel").addEventListener("click", () => { pendingUploadMode = "new"; });
+  document.getElementById("replaceImageLabel").addEventListener("click", () => { pendingUploadMode = "replace"; });
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files && fileInput.files[0]) {
+      const mode = templates.length === 0 ? "new" : pendingUploadMode;
+      loadImage(fileInput.files[0], mode);
+    }
+    fileInput.value = "";
+  });
+
+  // -------------------------------------------------------------------
+  // Text removal (diffusion inpaint) — returns {color, density}
+  // -------------------------------------------------------------------
+  function cleanRegion(canvas, box, pad) {
+    pad = pad || 3;
+    const ctx = canvas.getContext("2d");
+
+    // Write region: the box the user actually drew, +small pad — the only area whose
+    // pixels ever get modified.
+    const x1 = Math.max(0, box.x - pad), y1 = Math.max(0, box.y - pad);
+    const x2 = Math.min(canvas.width, box.x + box.w + pad), y2 = Math.min(canvas.height, box.y + box.h + pad);
+    const w = x2 - x1, h = y2 - y1;
+    if (w < 2 || h < 2) return null;
+
+    // Analyse a MUCH wider ring around the box so the background estimate has real
+    // background pixels to draw from, even when the selected text nearly fills the box.
+    // Crucially, the box itself is EXCLUDED from these samples below — the background
+    // reference is built purely from the surrounding ring, so it can never be biased by
+    // however much (or little) of the box turns out to be text.
+    const margin = Math.min(220, Math.max(30, Math.round(Math.max(box.w, box.h) * 0.9)));
+    const ax1 = Math.max(0, box.x - margin), ay1 = Math.max(0, box.y - margin);
+    const ax2 = Math.min(canvas.width, box.x + box.w + margin), ay2 = Math.min(canvas.height, box.y + box.h + margin);
+    const aw = ax2 - ax1, ah = ay2 - ay1;
+    if (aw < 4 || ah < 4) return null;
+
+    const analysis = ctx.getImageData(ax1, ay1, aw, ah).data;
+    let lumSamples = [], rSamples = [], gSamples = [], bSamples = [];
+    for (let ay = 0; ay < ah; ay++) {
+      const gy = ay1 + ay;
+      const inBoxRow = gy >= y1 && gy < y2;
+      for (let ax = 0; ax < aw; ax++) {
+        if (inBoxRow) { const gx = ax1 + ax; if (gx >= x1 && gx < x2) continue; }
+        const idx = (ay*aw + ax) * 4;
+        const r = analysis[idx], g = analysis[idx+1], b = analysis[idx+2];
+        lumSamples.push(0.299*r + 0.587*g + 0.114*b); rSamples.push(r); gSamples.push(g); bSamples.push(b);
+      }
+    }
+    if (!lumSamples.length) { // pathological case: no room for any ring at all around the box
+      for (let i = 0; i < analysis.length; i += 4) {
+        const r = analysis[i], g = analysis[i+1], b = analysis[i+2];
+        lumSamples.push(0.299*r + 0.587*g + 0.114*b); rSamples.push(r); gSamples.push(g); bSamples.push(b);
+      }
+    }
+
+    // Robust background estimate (median, not mean) over that ring — completely
+    // uncontaminated by the box's own contents, unlike a plain mean or a small local window.
+    function median(arr) { const s = arr.slice().sort((a,b)=>a-b); return s[Math.floor(s.length/2)]; }
+    const bgLum = median(lumSamples), bgR = median(rSamples), bgG = median(gSamples), bgB = median(bSamples);
+    const mad = median(lumSamples.map((v) => Math.abs(v - bgLum))) * 1.4826; // ~std under normality, robust to outliers
+    const threshold = Math.max(18, mad * 2.5);
+
+    const imgData = ctx.getImageData(x1, y1, w, h);
+    const data = imgData.data;
+
+    const mask = new Uint8Array(w * h);
+    let maskCount = 0;
+    for (let i = 0; i < w * h; i++) {
+      const actualLum = 0.299*data[i*4] + 0.587*data[i*4+1] + 0.114*data[i*4+2];
+      if (Math.abs(actualLum - bgLum) > threshold) { mask[i] = 1; maskCount++; }
+    }
+    let dilated = mask;
+    for (let pass = 0; pass < 2; pass++) {
+      const grown = new Uint8Array(w * h);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        let v = 0;
+        for (let dy=-1; dy<=1 && !v; dy++) for (let dx=-1; dx<=1 && !v; dx++) {
+          const nx=x+dx, ny=y+dy;
+          if (nx>=0 && nx<w && ny>=0 && ny<h && dilated[ny*w+nx]) v = 1;
+        }
+        grown[y*w+x] = v;
+      }
+      dilated = grown;
+    }
+
+    let tr=[], tg=[], tb=[];
+    for (let i = 0; i < w*h; i++) if (mask[i]) { tr.push(data[i*4]); tg.push(data[i*4+1]); tb.push(data[i*4+2]); }
+    const color = maskCount ? `rgb(${median(tr)}, ${median(tg)}, ${median(tb)})` : "rgb(20,20,20)";
+    const density = maskCount / (w*h);
+
+    // Seed masked pixels with the robust regional background color, then let the
+    // diffusion below relax that seed against the real (unmasked) boundary pixels —
+    // that relaxation is what picks up any gradient across the box, not the seed itself.
+    const work = new Float32Array(w*h*3);
+    for (let i = 0; i < w*h; i++) {
+      if (dilated[i]) { work[i*3]=bgR; work[i*3+1]=bgG; work[i*3+2]=bgB; }
+      else { work[i*3]=data[i*4]; work[i*3+1]=data[i*4+1]; work[i*3+2]=data[i*4+2]; }
+    }
+    let cur = work, next = new Float32Array(work.length);
+    for (let it = 0; it < 22; it++) {
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const idx = y*w+x;
+        if (!dilated[idx]) { next[idx*3]=cur[idx*3]; next[idx*3+1]=cur[idx*3+1]; next[idx*3+2]=cur[idx*3+2]; continue; }
+        let sr=0,sg=0,sb=0,n=0;
+        for (let dy=-1; dy<=1; dy++) for (let dx=-1; dx<=1; dx++) {
+          if (dx===0 && dy===0) continue;
+          const nx=x+dx, ny=y+dy;
+          if (nx>=0 && nx<w && ny>=0 && ny<h) { const nidx=ny*w+nx; sr+=cur[nidx*3]; sg+=cur[nidx*3+1]; sb+=cur[nidx*3+2]; n++; }
+        }
+        next[idx*3]=sr/n; next[idx*3+1]=sg/n; next[idx*3+2]=sb/n;
+      }
+      const tmp = cur; cur = next; next = tmp;
+    }
+    for (let i = 0; i < w*h; i++) { data[i*4]=cur[i*3]; data[i*4+1]=cur[i*3+1]; data[i*4+2]=cur[i*3+2]; }
+    ctx.putImageData(imgData, x1, y1);
+    return { color, density, region: {x1,y1,w,h} };
+  }
+
+  // -------------------------------------------------------------------
+  // Undo
+  // -------------------------------------------------------------------
+  function pushHistory(action) { history.push(action); }
+
+  function undo() {
+    const action = history.pop();
+    if (!action) { setStatus("Nada pra desfazer", false); return; }
+    if (action.type === "createField") {
+      cleanedBase.getContext("2d").putImageData(action.prevImageData, action.region.x1, action.region.y1);
+      fields = fields.filter((f) => f.id !== action.fieldId);
+      instances.forEach((inst) => { delete inst[action.fieldId]; });
+      if (selectedId === action.fieldId) selectedId = null;
+    } else if (action.type === "moveField") {
+      const f = fields.find((x) => x.id === action.fieldId);
+      if (f) { f.x = action.prevX; f.y = action.prevY; }
+    } else if (action.type === "resizeField") {
+      const f = fields.find((x) => x.id === action.fieldId);
+      if (f) { f.x = action.prevX; f.y = action.prevY; f.box.w = action.prevBoxW; f.box.h = action.prevBoxH; }
+    } else if (action.type === "editField") {
+      const f = fields.find((x) => x.id === action.fieldId);
+      if (f) Object.assign(f, action.prevSnapshot);
+    } else if (action.type === "deleteField") {
+      fields.splice(action.index, 0, action.field);
+    }
+    renderFieldsList(); renderInspector(); renderInstancesTable(); updateRecommendation();
+    redraw();
+    setStatus("Última alteração desfeita", true);
+  }
+
+  window.addEventListener("keydown", (e) => {
+    const active = document.activeElement;
+    const tag = (active && active.tagName) || "";
+    const type = (active && active.type) || "";
+    const isTextEntry = tag === "TEXTAREA" || (tag === "INPUT" && !["checkbox", "radio", "button", "submit"].includes(type));
+    if (isTextEntry) return;
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
+    if (e.key === "Escape" && picking) { cancelPicking(); }
+  });
+
+  // -------------------------------------------------------------------
+  // Pointer interactions: create field / move field / pick letter
+  // -------------------------------------------------------------------
+  function hitTestField(p) {
+    for (let i = fields.length - 1; i >= 0; i--) {
+      const f = fields[i], b = f._bbox;
+      if (!b) continue;
+      if (p.x >= b.x - 4 && p.x <= b.x + b.width + 4 && p.y >= b.y - 4 && p.y <= b.y + b.height + 4) return f;
+    }
+    return null;
+  }
+
+  // Corner resize handles on the SELECTED field's box — lets you make the framing area
+  // (and, unless a manual font size is set, the auto-fit text) bigger or smaller.
+  function hitTestHandle(p) {
+    const f = fields.find((x) => x.id === selectedId);
+    if (!f || !f._bbox) return null;
+    const b = f._bbox;
+    const tol = Math.max(6, cleanedBase.width / 220);
+    const corners = { nw: [b.x, b.y], ne: [b.x + b.width, b.y], sw: [b.x, b.y + b.height], se: [b.x + b.width, b.y + b.height] };
+    for (const key in corners) {
+      const [cx, cy] = corners[key];
+      if (Math.abs(p.x - cx) <= tol && Math.abs(p.y - cy) <= tol) return { field: f, handle: key };
+    }
+    return null;
+  }
+
+  function resizeBox(f, handle, newX, newY) {
+    const MIN = 12;
+    const left = f.x, top = f.y, right = f.x + f.box.w, bottom = f.y + f.box.h;
+    let nLeft = left, nTop = top, nRight = right, nBottom = bottom;
+    if (handle.includes("w")) nLeft = Math.min(newX, right - MIN);
+    if (handle.includes("e")) nRight = Math.max(newX, left + MIN);
+    if (handle.includes("n")) nTop = Math.min(newY, bottom - MIN);
+    if (handle.includes("s")) nBottom = Math.max(newY, top + MIN);
+    f.x = nLeft; f.y = nTop;
+    f.box = { x: f.box.x, y: f.box.y, w: nRight - nLeft, h: nBottom - nTop };
+  }
+
+  view.addEventListener("pointerdown", (evt) => {
+    if (!cleanedBase || popover.style.display === "flex") return;
+    evt.preventDefault();
+    const p = naturalPoint(evt);
+
+    if (picking) {
+      drag = { x1: p.x, y1: p.y, x2: p.x, y2: p.y };
+      const move = (e) => { const q = naturalPoint(e); drag.x2 = q.x; drag.y2 = q.y; redraw(); };
+      const up = () => {
+        window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+        const box = { x: Math.min(drag.x1,drag.x2), y: Math.min(drag.y1,drag.y2), w: Math.abs(drag.x2-drag.x1), h: Math.abs(drag.y2-drag.y1) };
+        drag = null;
+        if (box.w >= 3 && box.h >= 3) analyzeLetter(box);
+        else cancelPicking();
+      };
+      window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+      return;
+    }
+
+    const hitHandle = hitTestHandle(p);
+    if (hitHandle) {
+      const { field: f, handle } = hitHandle;
+      const prevX = f.x, prevY = f.y, prevBoxW = f.box.w, prevBoxH = f.box.h;
+      const move = (e) => { const q = naturalPoint(e); resizeBox(f, handle, q.x, q.y); redraw(); };
+      const up = () => {
+        window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+        if (f.x !== prevX || f.y !== prevY || f.box.w !== prevBoxW || f.box.h !== prevBoxH) {
+          pushHistory({ type: "resizeField", fieldId: f.id, prevX, prevY, prevBoxW, prevBoxH });
+        }
+      };
+      window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+      return;
+    }
+
+    const hit = hitTestField(p);
+    if (hit) {
+      const startX = p.x, startY = p.y, fieldStartX = hit.x, fieldStartY = hit.y;
+      let moved = false;
+      const move = (e) => {
+        const q = naturalPoint(e);
+        if (Math.abs(q.x-startX) > 2 || Math.abs(q.y-startY) > 2) moved = true;
+        hit.x = fieldStartX + (q.x - startX); hit.y = fieldStartY + (q.y - startY);
+        redraw();
+      };
+      const up = () => {
+        window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+        if (moved) {
+          pushHistory({ type: "moveField", fieldId: hit.id, prevX: fieldStartX, prevY: fieldStartY });
+        } else {
+          selectField(hit.id);
+        }
+      };
+      window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+      return;
+    }
+
+    drag = { x1: p.x, y1: p.y, x2: p.x, y2: p.y };
+    const move = (e) => { const q = naturalPoint(e); drag.x2 = q.x; drag.y2 = q.y; redraw(); };
+    const up = () => {
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+      const w = Math.abs(drag.x2-drag.x1), h = Math.abs(drag.y2-drag.y1);
+      if (w < 6 || h < 6) { drag = null; redraw(); return; }
+      const box = { x: Math.min(drag.x1,drag.x2), y: Math.min(drag.y1,drag.y2), w, h };
+      drag = null;
+      openPopover(box);
+    };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+  });
+
+  function openPopover(box) {
+    popover._pendingBox = box;
+    redraw();
+    const rect = view.getBoundingClientRect();
+    const left = (box.x / cleanedBase.width) * rect.width;
+    const top = ((box.y + box.h) / cleanedBase.height) * rect.height + 8;
+    popover.style.left = Math.max(0, Math.min(left, rect.width - 290)) + "px";
+    popover.style.top = top + "px";
+    popover.style.display = "flex";
+    popLabel.value = "Campo " + (fields.length + 1);
+    popText.value = "";
+    popLabel.focus();
+  }
+  function closePopover() { popover.style.display = "none"; popover._pendingBox = null; redraw(); }
+  popCancel.addEventListener("click", closePopover);
+  popLabel.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") popApply.click();
+    if (e.key === "Escape") closePopover();
+  });
+  // Insert manually rather than relying on the textarea's native Enter handling — a modified
+  // Enter isn't guaranteed to fall through to a plain line break across every browser/OS combo.
+  function insertAtCursor(textarea, text) {
+    const start = textarea.selectionStart, end = textarea.selectionEnd;
+    const value = textarea.value;
+    textarea.value = value.slice(0, start) + text + value.slice(end);
+    const pos = start + text.length;
+    textarea.selectionStart = textarea.selectionEnd = pos;
+  }
+  popText.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.shiftKey) { e.preventDefault(); insertAtCursor(popText, "\n"); return; }
+    if (e.key === "Enter") { e.preventDefault(); popApply.click(); return; }
+    if (e.key === "Escape") closePopover();
+  });
+
+  popApply.addEventListener("click", () => {
+    const box = popover._pendingBox;
+    const text = popText.value.trim();
+    const label = popLabel.value.trim() || ("Campo " + (fields.length + 1));
+    if (!box || !text) { closePopover(); return; }
+    popover.style.display = "none"; popover._pendingBox = null;
+
+    const prevImageData = cleanedBase.getContext("2d").getImageData(
+      Math.max(0, box.x - 3), Math.max(0, box.y - 3),
+      Math.min(cleanedBase.width, box.x + box.w + 3) - Math.max(0, box.x - 3),
+      Math.min(cleanedBase.height, box.y + box.h + 3) - Math.max(0, box.y - 3)
+    );
+    const result = cleanRegion(cleanedBase, box);
+    const id = nextId++;
+    const field = {
+      id, label, box, x: box.x, y: box.y, text,
+      color: result ? result.color : "rgb(20,20,20)",
+      autoBold: result ? result.density > 0.28 : false,
+      weightOverride: null, italic: false, family: "sans", fontSizeOverride: null, _bbox: null,
+    };
+    fields.push(field);
+    instances.forEach((inst) => { inst[id] = text; });
+    pushHistory({ type: "createField", fieldId: id, prevImageData, region: { x1: result.region.x1, y1: result.region.y1 } });
+
+    selectField(id);
+    renderFieldsList(); renderInstancesTable(); updateRecommendation();
+    updateBatchVisibility();
+    downloadBtn.disabled = false;
+    setStatus(fields.length + " campo(s) definido(s)", true);
+  });
+
+  // -------------------------------------------------------------------
+  // Fields list + inspector
+  // -------------------------------------------------------------------
+  function selectField(id) { selectedId = id; renderFieldsList(); renderInspector(); redraw(); }
+
+  function renderFieldsList() {
+    fieldsList.innerHTML = "";
+    fieldsEmpty.style.display = fields.length ? "none" : "block";
+    fields.forEach((f) => {
+      const li = document.createElement("li");
+      li.className = f.id === selectedId ? "selected" : "";
+      li.innerHTML = `<span class="lbl">${escapeHtml(f.label)}</span><span class="txt">${escapeHtml(f.text)}</span>`;
+      li.addEventListener("click", () => selectField(f.id));
+      const del = document.createElement("button");
+      del.className = "del"; del.textContent = "×"; del.title = "Remover campo";
+      del.addEventListener("click", (e) => { e.stopPropagation(); deleteField(f.id); });
+      li.appendChild(del);
+      fieldsList.appendChild(li);
+    });
+  }
+
+  function escapeHtml(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+
+  function renderInspector() {
+    const f = fields.find((x) => x.id === selectedId);
+    if (!f) { inspector.style.display = "none"; return; }
+    inspector.style.display = "block";
+    document.getElementById("inspectorCaption").textContent = "Editando: " + f.label;
+    inspText.value = f.text;
+    inspFamily.value = f.family;
+    inspItalic.checked = f.italic;
+    document.querySelectorAll('input[name="inspWeight"]').forEach((r) => {
+      r.checked = (r.value === "auto" && f.weightOverride === null) ||
+                  (r.value === "bold" && f.weightOverride === true) ||
+                  (r.value === "normal" && f.weightOverride === false);
+    });
+  }
+
+  function currentFieldSnapshot(f) { return { text: f.text, family: f.family, weightOverride: f.weightOverride, italic: f.italic, fontSizeOverride: f.fontSizeOverride }; }
+
+  function updateSelectedField(patch) {
+    const f = fields.find((x) => x.id === selectedId);
+    if (!f) return;
+    const prevSnapshot = currentFieldSnapshot(f);
+    Object.assign(f, patch);
+    pushHistory({ type: "editField", fieldId: f.id, prevSnapshot });
+    if (patch.text !== undefined) instances.forEach((inst) => { if (inst[f.id] === prevSnapshot.text) inst[f.id] = patch.text; });
+    renderFieldsList(); renderInstancesTable(); redraw();
+  }
+
+  inspText.addEventListener("change", () => updateSelectedField({ text: inspText.value }));
+  inspText.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.shiftKey) { e.preventDefault(); insertAtCursor(inspText, "\n"); return; }
+    if (e.key === "Enter") { e.preventDefault(); inspText.blur(); }
+  });
+  inspFamily.addEventListener("change", () => updateSelectedField({ family: inspFamily.value }));
+
+  // -------------------------------------------------------------------
+  // Custom fonts: load a .ttf/.otf/.woff file straight from disk (never leaves the
+  // browser) and make it selectable like any built-in family. Best-effort persisted
+  // to localStorage so it doesn't need re-uploading every time this page is reopened
+  // in the same browser — if storage isn't available it just falls back to session-only.
+  // -------------------------------------------------------------------
+  const CUSTOM_FONTS_KEY = "cracha_editor_custom_fonts_v1";
+  let customFontSeq = 0;
+
+  function arrayBufferToBase64(buf) {
+    let binary = "";
+    const bytes = new Uint8Array(buf);
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    return btoa(binary);
+  }
+  function base64ToArrayBuffer(b64) {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes.buffer;
+  }
+
+  function addCustomFontOption(label, value) {
+    const opt = document.createElement("option");
+    opt.value = value; opt.textContent = label + " (carregada)";
+    inspFamily.appendChild(opt);
+  }
+
+  async function registerCustomFont(displayName, arrayBuffer, persist) {
+    customFontSeq += 1;
+    const familyName = "CustomFont" + customFontSeq;
+    const face = new FontFace(familyName, arrayBuffer);
+    await face.load();
+    document.fonts.add(face);
+    const id = "custom" + customFontSeq;
+    FONT_STACKS[id] = `"${familyName}", ${FONT_STACKS.sans}`;
+    addCustomFontOption(displayName, id);
+    if (persist) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(CUSTOM_FONTS_KEY) || "[]");
+        stored.push({ name: displayName, dataB64: arrayBufferToBase64(arrayBuffer) });
+        localStorage.setItem(CUSTOM_FONTS_KEY, JSON.stringify(stored));
+      } catch (e) { /* storage full/unavailable — font still works for this session */ }
+    }
+    return id;
+  }
+
+  const fontFileInput = document.createElement("input");
+  fontFileInput.type = "file"; fontFileInput.accept = ".ttf,.otf,.woff,.woff2";
+  document.querySelector(".page").appendChild(fontFileInput);
+  loadFontBtn.addEventListener("click", () => fontFileInput.click());
+  fontFileInput.addEventListener("change", async () => {
+    const file = fontFileInput.files && fontFileInput.files[0];
+    fontFileInput.value = "";
+    if (!file) return;
+    const displayName = file.name.replace(/\.[^.]+$/, "");
+    try {
+      const buf = await file.arrayBuffer();
+      const id = await registerCustomFont(displayName, buf, true);
+      inspFamily.value = id;
+      if (selectedId != null) updateSelectedField({ family: id });
+      setStatus(`Fonte "${displayName}" carregada`, true);
+    } catch (e) {
+      setStatus("Não consegui carregar essa fonte — verifique se o arquivo é um .ttf/.otf/.woff válido", false);
+    }
+  });
+
+  (function restoreCustomFonts() {
+    let stored;
+    try { stored = JSON.parse(localStorage.getItem(CUSTOM_FONTS_KEY) || "[]"); } catch (e) { return; }
+    stored.forEach((item) => {
+      try { registerCustomFont(item.name, base64ToArrayBuffer(item.dataB64), false); } catch (e) { /* ignore corrupt entry */ }
+    });
+  })();
+  inspItalic.addEventListener("change", () => updateSelectedField({ italic: inspItalic.checked }));
+  document.querySelectorAll('input[name="inspWeight"]').forEach((r) => r.addEventListener("change", () => {
+    const v = document.querySelector('input[name="inspWeight"]:checked').value;
+    updateSelectedField({ weightOverride: v === "auto" ? null : v === "bold" });
+  }));
+
+  function deleteField(id) {
+    const index = fields.findIndex((f) => f.id === id);
+    if (index === -1) return;
+    const [field] = fields.splice(index, 1);
+    pushHistory({ type: "deleteField", field, index });
+    if (selectedId === id) selectedId = null;
+    renderFieldsList(); renderInspector(); renderInstancesTable(); updateRecommendation();
+    redraw();
+  }
+  deleteFieldBtn.addEventListener("click", () => { if (selectedId != null) deleteField(selectedId); });
+
+  function bumpFontSize(delta) {
+    const f = fields.find((x) => x.id === selectedId);
+    if (!f) return;
+    const base = f.fontSizeOverride || f._lastFitSize || 20;
+    updateSelectedField({ fontSizeOverride: Math.max(6, Math.round(base + delta)) });
+  }
+  fontSizeUpBtn.addEventListener("click", () => bumpFontSize(2));
+  fontSizeDownBtn.addEventListener("click", () => bumpFontSize(-2));
+  fontSizeAutoBtn.addEventListener("click", () => updateSelectedField({ fontSizeOverride: null }));
+
+  // -------------------------------------------------------------------
+  // "Detectar estilo por uma letra"
+  // -------------------------------------------------------------------
+  function cancelPicking() { picking = false; pickingBanner.style.display = "none"; stageHint.style.display = ""; redraw(); }
+  pickLetterBtn.addEventListener("click", () => {
+    if (selectedId == null) return;
+    picking = true; pickingBanner.style.display = "block"; stageHint.style.display = "none";
+    redraw();
+  });
+
+  function analyzeLetter(box) {
+    const ctx = original.getContext("2d");
+    const pad = 2;
+    const x1 = Math.max(0, box.x - pad), y1 = Math.max(0, box.y - pad);
+    const x2 = Math.min(original.width, box.x + box.w + pad), y2 = Math.min(original.height, box.y + box.h + pad);
+    const w = x2 - x1, h = y2 - y1;
+    cancelPicking();
+    if (w < 4 || h < 4) return;
+
+    const imgData = ctx.getImageData(x1, y1, w, h);
+    const data = imgData.data;
+    const lum = new Float32Array(w * h);
+    for (let i = 0; i < w*h; i++) lum[i] = 0.299*data[i*4] + 0.587*data[i*4+1] + 0.114*data[i*4+2];
+    const borderVals = [];
+    for (let x = 0; x < w; x++) { borderVals.push(lum[x]); borderVals.push(lum[(h-1)*w+x]); }
+    for (let y = 0; y < h; y++) { borderVals.push(lum[y*w]); borderVals.push(lum[y*w+(w-1)]); }
+    borderVals.sort((a,b)=>a-b);
+    const bgMedian = borderVals[Math.floor(borderVals.length/2)];
+    const mask = new Uint8Array(w*h);
+    let count = 0;
+    let minX=w, maxX=0, minY=h, maxY=0;
+    for (let y=0;y<h;y++) for (let x=0;x<w;x++) {
+      const i = y*w+x;
+      if (Math.abs(lum[i]-bgMedian) > 30) {
+        mask[i]=1; count++;
+        if (x<minX) minX=x; if (x>maxX) maxX=x; if (y<minY) minY=y; if (y>maxY) maxY=y;
+      }
+    }
+    if (count < 4) { setStatus("Não achei um traço nítido nessa seleção", false); return; }
+    const glyphW = maxX-minX+1, glyphH = maxY-minY+1;
+    const density = count / (glyphW*glyphH);
+    const bold = density > 0.34;
+
+    function bandCentroidX(rowStart, rowEnd) {
+      let sumX=0, n=0;
+      for (let y=rowStart;y<=rowEnd;y++) for (let x=0;x<w;x++) if (mask[y*w+x]) { sumX+=x; n++; }
+      return n ? sumX/n : null;
+    }
+    const topC = bandCentroidX(minY, minY + Math.max(1, Math.floor(glyphH*0.2)));
+    const botC = bandCentroidX(maxY - Math.max(1, Math.floor(glyphH*0.2)), maxY);
+    const italic = (topC != null && botC != null) && Math.abs(topC - botC) > glyphW * 0.18;
+
+    function bandInk(rowStart, rowEnd) {
+      let total=0;
+      for (let y=rowStart;y<=rowEnd;y++) for (let x=0;x<w;x++) if (mask[y*w+x]) total++;
+      return total / Math.max(1, (rowEnd-rowStart+1));
+    }
+    const edgeBand = Math.max(1, Math.floor(glyphH*0.12));
+    const midStart = minY + Math.floor(glyphH*0.4), midEnd = minY + Math.floor(glyphH*0.6);
+    const edgeInk = (bandInk(minY, minY+edgeBand) + bandInk(maxY-edgeBand, maxY)) / 2;
+    const midInk = bandInk(midStart, Math.max(midStart+1, midEnd));
+    const serif = midInk > 0 && edgeInk / midInk > 1.35;
+
+    updateSelectedField({ family: serif ? "serif" : "sans", weightOverride: bold, italic });
+    setStatus(`Estilo detectado: ${serif ? "serifa" : "sem serifa"}, ${bold ? "negrito" : "normal"}${italic ? ", itálico" : ""}`, true);
+  }
+
+  // -------------------------------------------------------------------
+  // Reset / Download (single image)
+  // -------------------------------------------------------------------
+  resetBtn.addEventListener("click", () => {
+    if (!original) return;
+    cleanedBase.getContext("2d").clearRect(0,0,cleanedBase.width, cleanedBase.height);
+    cleanedBase.getContext("2d").drawImage(original, 0, 0);
+    fields = []; instances = [{}]; selectedId = null; history = [];
+    renderFieldsList(); renderInspector(); renderInstancesTable(); updateRecommendation();
+    updateBatchVisibility();
+    redraw();
+    downloadBtn.disabled = true;
+    setStatus("Reiniciado", false);
+  });
+
+  // -------------------------------------------------------------------
+  // Upscale + sharpen: high-quality resample (not invented detail — no AI
+  // super-resolution here, just better interpolation) plus an unsharp-mask pass
+  // to make existing edges read crisper. Any fields already placed are rescaled
+  // so they stay aligned.
+  // -------------------------------------------------------------------
+  const MAX_UPSCALED_DIM = 4400;
+
+  function resampleHQ(srcCanvas, w, h) {
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const cx = c.getContext("2d");
+    cx.imageSmoothingEnabled = true;
+    cx.imageSmoothingQuality = "high";
+    cx.drawImage(srcCanvas, 0, 0, w, h);
+    return c;
+  }
+
+  function sharpenCanvas(canvas, amount, radius) {
+    radius = radius || 2;
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width, h = canvas.height;
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+    // separable box blur (horizontal pass then vertical) as the unsharp mask's "blurred" version —
+    // wider radius than a plain 3x3 so the sharpening is actually visible after a 2x upscale.
+    const tmp = new Float32Array(data.length);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      for (let c = 0; c < 3; c++) {
+        let sum = 0, count = 0;
+        for (let dx = -radius; dx <= radius; dx++) {
+          const xx = Math.min(w-1, Math.max(0, x+dx));
+          sum += data[(y*w+xx)*4+c]; count++;
+        }
+        tmp[(y*w+x)*4+c] = sum / count;
+      }
+    }
+    const blurred = new Float32Array(data.length);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      for (let c = 0; c < 3; c++) {
+        let sum = 0, count = 0;
+        for (let dy = -radius; dy <= radius; dy++) {
+          const yy = Math.min(h-1, Math.max(0, y+dy));
+          sum += tmp[(yy*w+x)*4+c]; count++;
+        }
+        blurred[(y*w+x)*4+c] = sum / count;
+      }
+    }
+    for (let i = 0; i < w*h; i++) {
+      for (let c = 0; c < 3; c++) {
+        const v = data[i*4+c] + amount * (data[i*4+c] - blurred[i*4+c]);
+        data[i*4+c] = Math.max(0, Math.min(255, v));
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  upscaleBtn.addEventListener("click", () => {
+    if (!cleanedBase) return;
+    let factor = 2;
+    const maxCurrent = Math.max(cleanedBase.width, cleanedBase.height);
+    if (maxCurrent * factor > MAX_UPSCALED_DIM) factor = MAX_UPSCALED_DIM / maxCurrent;
+    if (factor <= 1.01) { setStatus("Já está no tamanho máximo de trabalho", false); return; }
+
+    setStatus("Aumentando resolução…", false);
+    const newW = Math.round(cleanedBase.width * factor), newH = Math.round(cleanedBase.height * factor);
+    const newOriginal = resampleHQ(original, newW, newH);
+    const newCleaned = resampleHQ(cleanedBase, newW, newH);
+    sharpenCanvas(newOriginal, 0.9, 2);
+    sharpenCanvas(newCleaned, 0.9, 2);
+    original = newOriginal;
+    cleanedBase = newCleaned;
+    fields.forEach((f) => {
+      f.box = { x: f.box.x*factor, y: f.box.y*factor, w: f.box.w*factor, h: f.box.h*factor };
+      f.x *= factor; f.y *= factor;
+    });
+    redraw();
+    setStatus(`Resolução aumentada (${newW}×${newH})`, true);
+  });
+
+  downloadBtn.addEventListener("click", () => {
+    view.toBlob((blob) => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = "cracha_editado.png"; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }, "image/png");
+  });
+
+  window.addEventListener("resize", () => { if (cleanedBase) redraw(); });
+
+  // -------------------------------------------------------------------
+  // Batch: instances table
+  // -------------------------------------------------------------------
+  function renderInstancesTable() {
+    if (!fields.length) { instancesTable.innerHTML = ""; return; }
+    let html = "<thead><tr><th>#</th>";
+    fields.forEach((f) => { html += `<th>${escapeHtml(f.label)}</th>`; });
+    html += "<th></th></tr></thead><tbody>";
+    instances.forEach((inst, idx) => {
+      html += `<tr><td class="idx">${idx+1}</td>`;
+      fields.forEach((f) => {
+        const val = inst[f.id] != null ? inst[f.id] : "";
+        html += `<td><input type="text" data-row="${idx}" data-field="${f.id}" value="${escapeHtml(val)}" /></td>`;
+      });
+      html += `<td>${instances.length > 1 ? `<button class="del" data-row="${idx}" title="Remover linha">×</button>` : ""}</td></tr>`;
+    });
+    html += "</tbody>";
+    instancesTable.innerHTML = html;
+    instancesTable.querySelectorAll("input[data-row]").forEach((inp) => {
+      inp.addEventListener("input", () => {
+        const row = parseInt(inp.dataset.row, 10), fieldId = parseInt(inp.dataset.field, 10);
+        instances[row][fieldId] = inp.value;
+      });
+    });
+    instancesTable.querySelectorAll("button.del[data-row]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        instances.splice(parseInt(btn.dataset.row, 10), 1);
+        renderInstancesTable();
+      });
+    });
+  }
+
+  addRowBtn.addEventListener("click", () => {
+    const inst = {};
+    fields.forEach((f) => { inst[f.id] = f.text; });
+    instances.push(inst);
+    renderInstancesTable();
+  });
+
+  // -------------------------------------------------------------------
+  // Batch: grid math + recommendation
+  // -------------------------------------------------------------------
+  const A4 = { w: 210, h: 297 };
+  function fitGrid(availW, availH, itemW, itemH, gap) {
+    const cols = Math.max(0, Math.floor((availW + gap) / (itemW + gap)));
+    const rows = Math.max(0, Math.floor((availH + gap) / (itemH + gap)));
+    return { cols, rows, total: cols*rows };
+  }
+  function computeGrid(pageW, pageH, badgeW, badgeH, margin, gap) {
+    return fitGrid(pageW - 2*margin, pageH - 2*margin, badgeW, badgeH, gap);
+  }
+  // Leftover space to the right of, and below, the primary grid — partitioned so the
+  // bottom-right corner belongs only to the right strip (no overlap between the two).
+  function computeFillStrips(pageWmm, pageHmm, margin, gap, grid, badgeW, badgeH, smallW, smallH) {
+    const usedGridW = grid.cols > 0 ? grid.cols*badgeW + (grid.cols-1)*gap : 0;
+    const usedGridH = grid.rows > 0 ? grid.rows*badgeH + (grid.rows-1)*gap : 0;
+
+    const rightX = margin + usedGridW + (grid.cols > 0 ? gap : 0);
+    const rightW = Math.max(0, (pageWmm - margin) - rightX);
+    const rightH = pageHmm - 2*margin;
+    const rightGrid = fitGrid(rightW, rightH, smallW, smallH, gap);
+
+    const bottomY = margin + usedGridH + (grid.rows > 0 ? gap : 0);
+    const bottomH = Math.max(0, (pageHmm - margin) - bottomY);
+    const bottomW = usedGridW;
+    const bottomGrid = fitGrid(bottomW, bottomH, smallW, smallH, gap);
+
+    return {
+      right: { x: rightX, y: margin, grid: rightGrid },
+      bottom: { x: margin, y: bottomY, grid: bottomGrid },
+    };
+  }
+  // Inputs are in cm; every grid/page calculation below works in mm, so convert once here.
+  const CM_TO_MM = 10;
+  function currentDims() {
+    return {
+      badgeW: Math.max(1, (parseFloat(badgeWInput.value) || 9) * CM_TO_MM),
+      badgeH: Math.max(1, (parseFloat(badgeHInput.value) || 5.4) * CM_TO_MM),
+      margin: Math.max(0, (parseFloat(marginMmInput.value) || 0.8) * CM_TO_MM),
+      gap: Math.max(0, (parseFloat(gapMmInput.value) || 0.4) * CM_TO_MM),
+    };
+  }
+  function smallDims() {
+    return {
+      smallW: Math.max(1, (parseFloat(smallWInput.value) || 4.5) * CM_TO_MM),
+      smallH: Math.max(1, (parseFloat(smallHInput.value) || 2.7) * CM_TO_MM),
+    };
+  }
+  function updateRecommendation() {
+    const anyFields = fields.length > 0 || templates.some((t) => t.id !== activeTemplateId && t.fields && t.fields.length > 0);
+    if (!anyFields) { recBox.innerHTML = ""; return; }
+    const { badgeW, badgeH, margin, gap } = currentDims();
+    const portrait = computeGrid(A4.w, A4.h, badgeW, badgeH, margin, gap);
+    const landscape = computeGrid(A4.h, A4.w, badgeW, badgeH, margin, gap);
+    const best = portrait.total >= landscape.total ? "retrato" : "paisagem";
+
+    let extra = "";
+    if (fillRemainingChk.checked) {
+      const { smallW, smallH } = smallDims();
+      const pStrips = computeFillStrips(A4.w, A4.h, margin, gap, portrait, badgeW, badgeH, smallW, smallH);
+      const lStrips = computeFillStrips(A4.h, A4.w, margin, gap, landscape, badgeW, badgeH, smallW, smallH);
+      const pExtra = pStrips.right.grid.total + pStrips.bottom.grid.total;
+      const lExtra = lStrips.right.grid.total + lStrips.bottom.grid.total;
+      extra = ` + <b>${best === "retrato" ? pExtra : lExtra}</b> menor(es) na sobra`;
+    }
+
+    recBox.innerHTML =
+      `Recomendado: <b>${best === "retrato" ? "Retrato" : "Paisagem"}</b>${extra} — ` +
+      `Retrato: <b>${portrait.total}</b> por folha (${portrait.cols}×${portrait.rows}) · ` +
+      `Paisagem: <b>${landscape.total}</b> por folha (${landscape.cols}×${landscape.rows})`;
+  }
+  [badgeWInput, badgeHInput, marginMmInput, gapMmInput, smallWInput, smallHInput].forEach((inp) => inp.addEventListener("input", updateRecommendation));
+  fillRemainingChk.addEventListener("change", () => {
+    document.getElementById("fillSizeInputs").style.display = fillRemainingChk.checked ? "grid" : "none";
+    updateRecommendation();
+  });
+
+  function activeGridAndPage() {
+    const { badgeW, badgeH, margin, gap } = currentDims();
+    const portrait = computeGrid(A4.w, A4.h, badgeW, badgeH, margin, gap);
+    const landscape = computeGrid(A4.h, A4.w, badgeW, badgeH, margin, gap);
+    let orientation = orientationSel.value;
+    if (orientation === "auto") orientation = portrait.total >= landscape.total ? "retrato" : "paisagem";
+    const grid = orientation === "retrato" ? portrait : landscape;
+    const pageWmm = orientation === "retrato" ? A4.w : A4.h;
+    const pageHmm = orientation === "retrato" ? A4.h : A4.w;
+
+    let strips = null, smallW = null, smallH = null;
+    if (fillRemainingChk.checked) {
+      ({ smallW, smallH } = smallDims());
+      strips = computeFillStrips(pageWmm, pageHmm, margin, gap, grid, badgeW, badgeH, smallW, smallH);
+    }
+
+    return { grid, pageWmm, pageHmm, badgeW, badgeH, margin, gap, strips, smallW, smallH };
+  }
+
+  function renderPage(primaryChunk, secondaryChunk, ctxDims, dpi) {
+    const { grid, pageWmm, pageHmm, badgeW, badgeH, margin, gap, strips, smallW, smallH } = ctxDims;
+    const mm = (v) => Math.round((v / 25.4) * dpi);
+    const pageCanvas = document.createElement("canvas");
+    pageCanvas.width = mm(pageWmm); pageCanvas.height = mm(pageHmm);
+    const pctx = pageCanvas.getContext("2d");
+    pctx.imageSmoothingEnabled = true;
+    pctx.imageSmoothingQuality = "high";
+    pctx.fillStyle = "#ffffff"; pctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+    const gapPx = mm(gap);
+
+    // `entry` is { template, inst } — each badge on the sheet can come from a different
+    // template (design), all scaled to the same physical badge/small size.
+    function drawBadgeAt(entry, destX, destY, wpx, hpx) {
+      const { template, inst } = entry;
+      const base = template.cleanedBase;
+      const bsx = wpx / base.width, bsy = hpx / base.height;
+      pctx.drawImage(base, 0, 0, base.width, base.height, destX, destY, wpx, hpx);
+      template.fields.forEach((f) => {
+        const text = (inst[f.id] != null ? inst[f.id] : f.text || "").toString();
+        if (!text) return;
+        drawFieldText(pctx, f, text, destX + f.x*bsx, destY + f.y*bsy, f.box.w*bsx, f.box.h*bsy, bsx);
+      });
+    }
+
+    const badgeWpx = mm(badgeW), badgeHpx = mm(badgeH), marginPx = mm(margin);
+    primaryChunk.forEach((entry, i) => {
+      const col = i % grid.cols, row = Math.floor(i / grid.cols);
+      drawBadgeAt(entry, marginPx + col*(badgeWpx+gapPx), marginPx + row*(badgeHpx+gapPx), badgeWpx, badgeHpx);
+    });
+
+    if (strips && secondaryChunk && secondaryChunk.length) {
+      const smallWpx = mm(smallW), smallHpx = mm(smallH);
+      let cursor = 0;
+      const rg = strips.right.grid;
+      for (let i = 0; i < rg.total && cursor < secondaryChunk.length; i++, cursor++) {
+        const col = i % rg.cols, row = Math.floor(i / rg.cols);
+        drawBadgeAt(secondaryChunk[cursor], mm(strips.right.x) + col*(smallWpx+gapPx), mm(strips.right.y) + row*(smallHpx+gapPx), smallWpx, smallHpx);
+      }
+      const bg = strips.bottom.grid;
+      for (let i = 0; i < bg.total && cursor < secondaryChunk.length; i++, cursor++) {
+        const col = i % bg.cols, row = Math.floor(i / bg.cols);
+        drawBadgeAt(secondaryChunk[cursor], mm(strips.bottom.x) + col*(smallWpx+gapPx), mm(strips.bottom.y) + row*(smallHpx+gapPx), smallWpx, smallHpx);
+      }
+    }
+    return pageCanvas;
+  }
+
+  generateBtn.addEventListener("click", () => {
+    snapshotActive(); // make sure the active template's latest edits are captured too
+    const allEntries = [];
+    templates.forEach((t) => {
+      if (!t.fields || !t.fields.length) return;
+      t.instances.forEach((inst) => allEntries.push({ template: t, inst }));
+    });
+    if (!allEntries.length) return;
+    const ctxDims = activeGridAndPage();
+    const dpi = parseInt(dpiSel.value, 10) || 300;
+    if (ctxDims.grid.total === 0) {
+      recBox.innerHTML = "O crachá é maior que a folha com essas margens — reduza o tamanho ou as margens.";
+      return;
+    }
+    pagesOutput.innerHTML = "";
+    const perPagePrimary = ctxDims.grid.total;
+    const secondaryPerPage = ctxDims.strips ? (ctxDims.strips.right.grid.total + ctxDims.strips.bottom.grid.total) : 0;
+    const perPageTotal = perPagePrimary + secondaryPerPage;
+    const totalPages = Math.ceil(allEntries.length / perPageTotal);
+    let cursor = 0;
+    for (let p = 0; p < totalPages; p++) {
+      const primaryChunk = allEntries.slice(cursor, cursor + perPagePrimary);
+      cursor += primaryChunk.length;
+      const secondaryChunk = allEntries.slice(cursor, cursor + secondaryPerPage);
+      cursor += secondaryChunk.length;
+      const pageCanvas = renderPage(primaryChunk, secondaryChunk, ctxDims, dpi);
+      const card = document.createElement("div");
+      card.className = "page-card";
+      const img = document.createElement("img");
+      img.src = pageCanvas.toDataURL("image/png");
+      const label = document.createElement("span");
+      const totalOnPage = primaryChunk.length + secondaryChunk.length;
+      label.textContent = `Página ${p + 1} de ${totalPages} · ${totalOnPage} crachá(s)` +
+        (secondaryChunk.length ? ` (${primaryChunk.length} + ${secondaryChunk.length} menores)` : "");
+      const btn = document.createElement("button");
+      btn.className = "btn secondary tiny";
+      btn.textContent = "Baixar página";
+      btn.addEventListener("click", () => {
+        pageCanvas.toBlob((blob) => {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob); a.download = `folha_${p+1}.png`; a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        }, "image/png");
+      });
+      card.appendChild(img); card.appendChild(label); card.appendChild(btn);
+      pagesOutput.appendChild(card);
+    }
+    setStatus(`${totalPages} folha(s) gerada(s)`, true);
+  });
+})();
+</script>
