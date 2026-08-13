@@ -1,3 +1,5 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Editor de Crachá</title>
 <style>
   @font-face { font-family: 'App Sans'; src: url(__FONT_SANS_REG__) format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
@@ -57,6 +59,16 @@
     -webkit-font-smoothing: antialiased; line-height: 1.45;
   }
   .page { max-width: 1120px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+  @media (max-width: 600px) {
+    .page { padding: 1.5rem 1rem 3rem; }
+    .stage { padding: 0.9rem; }
+    .panel { padding: 0.85rem 0.9rem; }
+    .batch { padding: 1.1rem; }
+  }
+  @media (max-width: 420px) {
+    .page { padding: 1.1rem 0.7rem 2.5rem; }
+    h1 { font-size: 1.45rem; }
+  }
 
   header.top { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 2rem; }
   .eyebrow {
@@ -150,7 +162,7 @@
   .popover {
     position: absolute; background: var(--surface); border: 1px solid var(--line);
     border-radius: 10px; box-shadow: var(--shadow); padding: 0.7rem; display: flex;
-    flex-direction: column; gap: 0.5rem; z-index: 5; width: 280px;
+    flex-direction: column; gap: 0.5rem; z-index: 5; width: min(280px, 92%);
     line-height: 1.4; /* .canvas-wrap sets line-height:0 to kill inline-canvas gap — reset it here so labels/inputs don't inherit that collapse */
   }
   .popover label.cap { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -218,8 +230,16 @@
   .status.ok { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
 
   .stack { display: flex; flex-direction: column; gap: 0.6rem; }
-  .row { display: flex; gap: 0.6rem; }
+  .row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
   .row > * { flex: 1; }
+
+  /* Touch devices: every tappable control gets a comfortably large hit area. */
+  @media (pointer: coarse) {
+    .btn, .upload-btn { min-height: 2.75rem; }
+    .btn.tiny { min-height: 2.4rem; padding: 0.5rem 0.75rem; }
+    .tpl-chip .tpl-del, ul.list .del, table.instances .del { min-width: 2rem; min-height: 2rem; font-size: 1.2rem; }
+    .seg label { padding: 0.6rem 0.3rem; }
+  }
 
   .batch {
     margin-top: 2rem; background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
@@ -610,6 +630,19 @@
     return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#E0A23D";
   }
 
+  // Natural-resolution pixels per displayed (CSS) pixel — the canvas can be shown much
+  // smaller than its working resolution (e.g. a 2200px-wide image on a 320px phone screen),
+  // so any hit-test tolerance or handle drawn in NATURAL pixels must be scaled by this or it
+  // shrinks to nothing on-screen. Sized in real CSS px so touch targets stay comfortable
+  // regardless of image resolution or zoom.
+  function displayScale() {
+    const w = view.getBoundingClientRect().width;
+    return w > 0 ? cleanedBase.width / w : 1;
+  }
+  function touchTolerancePx() {
+    return (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ? 22 : 12;
+  }
+
   function naturalPoint(evt) {
     const rect = view.getBoundingClientRect();
     const cx = (evt.touches ? evt.touches[0].clientX : evt.clientX) - rect.left;
@@ -705,7 +738,7 @@
           vctx.setLineDash([5, 3]);
           vctx.strokeRect(b.x - 4, b.y - 4, b.width + 8, b.height + 8);
           vctx.setLineDash([]);
-          const hs = Math.max(6, cleanedBase.width / 200);
+          const hs = Math.max(6, touchTolerancePx() * 0.75 * displayScale());
           vctx.fillStyle = accentColor();
           [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]].forEach(([cx, cy]) => {
             vctx.fillRect(cx - hs / 2, cy - hs / 2, hs, hs);
@@ -943,7 +976,7 @@
     const f = fields.find((x) => x.id === selectedId);
     if (!f || !f._bbox) return null;
     const b = f._bbox;
-    const tol = Math.max(6, cleanedBase.width / 220);
+    const tol = Math.max(6, touchTolerancePx() * displayScale());
     const corners = { nw: [b.x, b.y], ne: [b.x + b.width, b.y], sw: [b.x, b.y + b.height], se: [b.x + b.width, b.y + b.height] };
     for (const key in corners) {
       const [cx, cy] = corners[key];
@@ -1036,14 +1069,27 @@
   function openPopover(box) {
     popover._pendingBox = box;
     redraw();
-    const rect = view.getBoundingClientRect();
-    const left = (box.x / cleanedBase.width) * rect.width;
-    const top = ((box.y + box.h) / cleanedBase.height) * rect.height + 8;
-    popover.style.left = Math.max(0, Math.min(left, rect.width - 290)) + "px";
-    popover.style.top = top + "px";
     popover.style.display = "flex";
     popLabel.value = "Campo " + (fields.length + 1);
     popText.value = "";
+
+    // Measure the popover for real (its width is fluid — min(280px, 92%) — so it can be
+    // narrower than 280px on small screens) and keep it fully inside the canvas on every side,
+    // flipping above the box when there isn't enough room below (common on short mobile viewports).
+    const rect = view.getBoundingClientRect();
+    const boxLeftPx = (box.x / cleanedBase.width) * rect.width;
+    const boxTopPx = (box.y / cleanedBase.height) * rect.height;
+    const boxBottomPx = ((box.y + box.h) / cleanedBase.height) * rect.height;
+    const popW = popover.offsetWidth, popH = popover.offsetHeight;
+
+    const left = Math.max(0, Math.min(boxLeftPx, rect.width - popW));
+    let top = boxBottomPx + 8;
+    if (top + popH > rect.height) {
+      const above = boxTopPx - popH - 8;
+      top = above >= 0 ? above : Math.max(0, rect.height - popH);
+    }
+    popover.style.left = left + "px";
+    popover.style.top = top + "px";
     popLabel.focus();
   }
   function closePopover() { popover.style.display = "none"; popover._pendingBox = null; redraw(); }
