@@ -450,17 +450,17 @@
     </div>
     <button class="btn secondary" id="bulkAddBtn" style="align-self:flex-start;">Adicionar de uma vez</button>
 
-    <details class="adv">
-      <summary>Colar lista (distribui um valor por crachá num campo escolhido)</summary>
-      <div class="stack">
-        <label style="font-size:0.78rem; color:var(--muted);">Aplicar no campo
-          <select id="pasteFieldSel" class="select"></select>
-        </label>
-        <textarea id="pasteListArea" class="select" rows="4" placeholder="Cole a lista aqui — um por linha, separado por vírgula, ou por espaço:&#10;MARIA SOUZA&#10;JOAO PEREIRA&#10;ANA LIMA"></textarea>
-        <button class="btn secondary tiny" id="pasteListBtn" style="align-self:flex-start;">Aplicar lista</button>
-        <p class="hint">Preenche os crachás que já existem, um valor por linha (ou vírgula/espaço se não houver linhas) — se sobrar valor, cria crachás novos automaticamente.</p>
+    <div class="fill-box stack">
+      <div>
+        <strong style="font-size:0.88rem;">Colar lista de nomes</strong>
+        <p class="hint" style="margin:0.25rem 0 0;">Cole uma lista com um valor por crachá — quebrada por linha, vírgula ou espaço, tanto faz. Escolha o campo que recebe e clica em aplicar: preenche os crachás que já existem, e cria linhas novas se sobrar valor.</p>
       </div>
-    </details>
+      <label style="font-size:0.78rem; color:var(--muted);">Aplicar no campo
+        <select id="pasteFieldSel" class="select"></select>
+      </label>
+      <textarea id="pasteListArea" class="select" rows="4" placeholder="MARIA SOUZA&#10;JOAO PEREIRA&#10;ANA LIMA"></textarea>
+      <button class="btn secondary" id="pasteListBtn" style="align-self:flex-start;">Aplicar lista</button>
+    </div>
 
     <div class="table-wrap">
       <table class="instances" id="instancesTable"></table>
