@@ -451,10 +451,14 @@
     <button class="btn secondary" id="bulkAddBtn" style="align-self:flex-start;">Adicionar de uma vez</button>
 
     <details class="adv">
-      <summary>Colar lista (uma linha por crachá — cole direto de uma planilha, colunas separadas por Tab)</summary>
+      <summary>Colar lista (distribui um valor por crachá num campo escolhido)</summary>
       <div class="stack">
-        <textarea id="pasteListArea" class="select" rows="4" placeholder="MARIA SOUZA&#10;JOAO PEREIRA	GERENTE&#10;ANA LIMA	DESENVOLVEDORA"></textarea>
+        <label style="font-size:0.78rem; color:var(--muted);">Aplicar no campo
+          <select id="pasteFieldSel" class="select"></select>
+        </label>
+        <textarea id="pasteListArea" class="select" rows="4" placeholder="Cole a lista aqui — um por linha, separado por vírgula, ou por espaço:&#10;MARIA SOUZA&#10;JOAO PEREIRA&#10;ANA LIMA"></textarea>
         <button class="btn secondary tiny" id="pasteListBtn" style="align-self:flex-start;">Aplicar lista</button>
+        <p class="hint">Preenche os crachás que já existem, um valor por linha (ou vírgula/espaço se não houver linhas) — se sobrar valor, cria crachás novos automaticamente.</p>
       </div>
     </details>
 
@@ -533,6 +537,7 @@
   const addRowBtn = document.getElementById("addRowBtn");
   const bulkAddCountInput = document.getElementById("bulkAddCount");
   const bulkAddBtn = document.getElementById("bulkAddBtn");
+  const pasteFieldSel = document.getElementById("pasteFieldSel");
   const pasteListArea = document.getElementById("pasteListArea");
   const pasteListBtn = document.getElementById("pasteListBtn");
   const generateBtn = document.getElementById("generateBtn");
@@ -1526,7 +1531,19 @@
   // -------------------------------------------------------------------
   // Batch: instances table
   // -------------------------------------------------------------------
+  function renderPasteFieldSelect() {
+    const prev = pasteFieldSel.value;
+    pasteFieldSel.innerHTML = "";
+    fields.forEach((f) => {
+      const opt = document.createElement("option");
+      opt.value = f.id; opt.textContent = f.label;
+      pasteFieldSel.appendChild(opt);
+    });
+    if (fields.some((f) => String(f.id) === prev)) pasteFieldSel.value = prev;
+  }
+
   function renderInstancesTable() {
+    renderPasteFieldSelect();
     if (!fields.length) { instancesTable.innerHTML = ""; return; }
     let html = "<thead><tr><th>#</th>";
     fields.forEach((f) => { html += `<th>${escapeHtml(f.label)}</th>`; });
@@ -1575,18 +1592,34 @@
 
   // Paste from a spreadsheet: one line per crachá, columns separated by Tab (exactly how
   // Excel/Sheets/Numbers put multi-column selections on the clipboard) mapped to fields in order.
+  // Accepts a pasted list in whatever shape it comes in — one per line (most reliable, since
+  // it can't be confused by multi-word names), comma-separated, or plain whitespace-separated
+  // as a last resort. Picks the first separator that's actually present.
+  function parseList(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    if (/\r\n|\r|\n/.test(trimmed)) return trimmed.split(/\r\n|\r|\n/).map((s) => s.trim()).filter(Boolean);
+    if (trimmed.includes(",")) return trimmed.split(",").map((s) => s.trim()).filter(Boolean);
+    return trimmed.split(/\s+/).map((s) => s.trim()).filter(Boolean);
+  }
+
   pasteListBtn.addEventListener("click", () => {
-    const lines = pasteListArea.value.split(/\r\n|\r|\n/).filter((l) => l.trim().length > 0);
-    if (!lines.length) return;
-    lines.forEach((line) => {
-      const parts = line.split("\t");
-      const inst = {};
-      fields.forEach((f, i) => { inst[f.id] = (parts[i] != null && parts[i].trim() !== "") ? parts[i].trim() : f.text; });
-      instances.push(inst);
+    const fieldId = parseInt(pasteFieldSel.value, 10);
+    if (!fields.some((f) => f.id === fieldId)) { setStatus("Nenhum campo disponível pra aplicar a lista", false); return; }
+    const values = parseList(pasteListArea.value);
+    if (!values.length) return;
+    values.forEach((value, i) => {
+      if (!instances[i]) {
+        const inst = {};
+        fields.forEach((f) => { inst[f.id] = f.text; });
+        instances[i] = inst;
+      }
+      instances[i][fieldId] = value;
     });
     pasteListArea.value = "";
     renderInstancesTable();
-    setStatus(`${lines.length} crachá(s) adicionados da lista`, true);
+    const fieldLabel = fields.find((f) => f.id === fieldId).label;
+    setStatus(`${values.length} valor(es) aplicado(s) ao campo "${fieldLabel}"`, true);
   });
 
   // -------------------------------------------------------------------
