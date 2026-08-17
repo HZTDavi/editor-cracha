@@ -198,6 +198,10 @@
     font: inherit; font-size: 0.85rem; padding: 0.4rem 0.5rem; border-radius: 7px;
     border: 1px solid var(--line); background: var(--paper); color: var(--ink); width: 100%;
   }
+  input[type="color"] {
+    flex: 0 0 auto; width: 2.6rem; height: 2.2rem; padding: 0.15rem; border-radius: 6px;
+    border: 1px solid var(--line); background: var(--paper); cursor: pointer;
+  }
 
   ul.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; }
   ul.list li {
@@ -376,6 +380,10 @@
               <button class="btn secondary tiny" id="fontSizeUp" title="Aumentar a letra">A+</button>
               <button class="btn secondary tiny" id="fontSizeAuto" title="Voltar a ajustar automaticamente à caixa">Auto</button>
             </div>
+            <div class="row" style="align-items:center;">
+              <span class="hint" style="flex:1;">Cor da letra</span>
+              <input type="color" id="inspColor" title="Cor do texto" />
+            </div>
             <button class="btn secondary tiny" id="pickLetterBtn">Detectar estilo por uma letra</button>
             <button class="btn secondary tiny" id="deleteFieldBtn">Remover campo</button>
           </div>
@@ -437,6 +445,19 @@
 
     <div class="rec" id="recBox"></div>
 
+    <div class="field-grid" style="max-width:420px;">
+      <label>Quantos crachás?<input id="bulkAddCount" type="number" min="1" step="1" value="10" /></label>
+    </div>
+    <button class="btn secondary" id="bulkAddBtn" style="align-self:flex-start;">Adicionar de uma vez</button>
+
+    <details class="adv">
+      <summary>Colar lista (uma linha por crachá — cole direto de uma planilha, colunas separadas por Tab)</summary>
+      <div class="stack">
+        <textarea id="pasteListArea" class="select" rows="4" placeholder="MARIA SOUZA&#10;JOAO PEREIRA	GERENTE&#10;ANA LIMA	DESENVOLVEDORA"></textarea>
+        <button class="btn secondary tiny" id="pasteListBtn" style="align-self:flex-start;">Aplicar lista</button>
+      </div>
+    </details>
+
     <div class="table-wrap">
       <table class="instances" id="instancesTable"></table>
     </div>
@@ -487,6 +508,7 @@
   const inspFamily = document.getElementById("inspFamily");
   const loadFontBtn = document.getElementById("loadFontBtn");
   const inspItalic = document.getElementById("inspItalic");
+  const inspColor = document.getElementById("inspColor");
   const pickLetterBtn = document.getElementById("pickLetterBtn");
   const deleteFieldBtn = document.getElementById("deleteFieldBtn");
   const fontSizeDownBtn = document.getElementById("fontSizeDown");
@@ -509,6 +531,10 @@
   const recBox = document.getElementById("recBox");
   const instancesTable = document.getElementById("instancesTable");
   const addRowBtn = document.getElementById("addRowBtn");
+  const bulkAddCountInput = document.getElementById("bulkAddCount");
+  const bulkAddBtn = document.getElementById("bulkAddBtn");
+  const pasteListArea = document.getElementById("pasteListArea");
+  const pasteListBtn = document.getElementById("pasteListBtn");
   const generateBtn = document.getElementById("generateBtn");
   const pagesOutput = document.getElementById("pagesOutput");
 
@@ -547,6 +573,14 @@
     t.original = original; t.cleanedBase = cleanedBase;
     t.fields = fields; t.instances = instances;
     t.selectedId = selectedId; t.history = history;
+    // Batch/print settings (badge size, orientation, fill-remaining) are per-template too —
+    // otherwise editing one model's size silently changed every other model's as well.
+    t.badgeW = parseFloat(badgeWInput.value) || t.badgeW || 9;
+    t.badgeH = parseFloat(badgeHInput.value) || t.badgeH || 5.4;
+    t.orientation = orientationSel.value;
+    t.fillRemaining = fillRemainingChk.checked;
+    t.smallW = parseFloat(smallWInput.value) || t.smallW || 4.5;
+    t.smallH = parseFloat(smallHInput.value) || t.smallH || 2.7;
   }
 
   function restoreTemplate(id) {
@@ -556,6 +590,13 @@
     original = t.original; cleanedBase = t.cleanedBase;
     fields = t.fields; instances = t.instances;
     selectedId = t.selectedId; history = t.history;
+    badgeWInput.value = t.badgeW || 9;
+    badgeHInput.value = t.badgeH || 5.4;
+    orientationSel.value = t.orientation || "auto";
+    fillRemainingChk.checked = !!t.fillRemaining;
+    document.getElementById("fillSizeInputs").style.display = t.fillRemaining ? "grid" : "none";
+    smallWInput.value = t.smallW || 4.5;
+    smallHInput.value = t.smallH || 2.7;
     renderTemplateTabs();
     renderFieldsList(); renderInspector(); renderInstancesTable(); updateRecommendation();
     redraw();
@@ -624,6 +665,11 @@
   function setStatus(text, ok) {
     statusChip.textContent = text;
     statusChip.classList.toggle("ok", !!ok);
+  }
+
+  function toHex(r, g, b) {
+    const h = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+    return `#${h(r)}${h(g)}${h(b)}`;
   }
 
   function accentColor() {
@@ -887,7 +933,7 @@
 
     let tr=[], tg=[], tb=[];
     for (let i = 0; i < w*h; i++) if (mask[i]) { tr.push(data[i*4]); tg.push(data[i*4+1]); tb.push(data[i*4+2]); }
-    const color = maskCount ? `rgb(${median(tr)}, ${median(tg)}, ${median(tb)})` : "rgb(20,20,20)";
+    const color = maskCount ? toHex(median(tr), median(tg), median(tb)) : "#141414";
     const density = maskCount / (w*h);
 
     // Seed masked pixels with the robust regional background color, then let the
@@ -1129,7 +1175,7 @@
     const id = nextId++;
     const field = {
       id, label, box, x: box.x, y: box.y, text,
-      color: result ? result.color : "rgb(20,20,20)",
+      color: result ? result.color : "#141414",
       autoBold: result ? result.density > 0.28 : false,
       weightOverride: null, italic: false, family: "sans", fontSizeOverride: null, _bbox: null,
     };
@@ -1175,6 +1221,7 @@
     inspText.value = f.text;
     inspFamily.value = f.family;
     inspItalic.checked = f.italic;
+    inspColor.value = f.color || "#141414";
     document.querySelectorAll('input[name="inspWeight"]').forEach((r) => {
       r.checked = (r.value === "auto" && f.weightOverride === null) ||
                   (r.value === "bold" && f.weightOverride === true) ||
@@ -1182,7 +1229,7 @@
     });
   }
 
-  function currentFieldSnapshot(f) { return { text: f.text, family: f.family, weightOverride: f.weightOverride, italic: f.italic, fontSizeOverride: f.fontSizeOverride }; }
+  function currentFieldSnapshot(f) { return { text: f.text, family: f.family, weightOverride: f.weightOverride, italic: f.italic, fontSizeOverride: f.fontSizeOverride, color: f.color }; }
 
   function updateSelectedField(patch) {
     const f = fields.find((x) => x.id === selectedId);
@@ -1277,6 +1324,7 @@
     });
   })();
   inspItalic.addEventListener("change", () => updateSelectedField({ italic: inspItalic.checked }));
+  inspColor.addEventListener("input", () => updateSelectedField({ color: inspColor.value }));
   document.querySelectorAll('input[name="inspWeight"]').forEach((r) => r.addEventListener("change", () => {
     const v = document.querySelector('input[name="inspWeight"]:checked').value;
     updateSelectedField({ weightOverride: v === "auto" ? null : v === "bold" });
@@ -1514,6 +1562,33 @@
     renderInstancesTable();
   });
 
+  bulkAddBtn.addEventListener("click", () => {
+    const n = Math.max(1, Math.min(2000, parseInt(bulkAddCountInput.value, 10) || 1));
+    for (let i = 0; i < n; i++) {
+      const inst = {};
+      fields.forEach((f) => { inst[f.id] = f.text; });
+      instances.push(inst);
+    }
+    renderInstancesTable();
+    setStatus(`${n} crachá(s) adicionados`, true);
+  });
+
+  // Paste from a spreadsheet: one line per crachá, columns separated by Tab (exactly how
+  // Excel/Sheets/Numbers put multi-column selections on the clipboard) mapped to fields in order.
+  pasteListBtn.addEventListener("click", () => {
+    const lines = pasteListArea.value.split(/\r\n|\r|\n/).filter((l) => l.trim().length > 0);
+    if (!lines.length) return;
+    lines.forEach((line) => {
+      const parts = line.split("\t");
+      const inst = {};
+      fields.forEach((f, i) => { inst[f.id] = (parts[i] != null && parts[i].trim() !== "") ? parts[i].trim() : f.text; });
+      instances.push(inst);
+    });
+    pasteListArea.value = "";
+    renderInstancesTable();
+    setStatus(`${lines.length} crachá(s) adicionados da lista`, true);
+  });
+
   // -------------------------------------------------------------------
   // Batch: grid math + recommendation
   // -------------------------------------------------------------------
@@ -1592,19 +1667,25 @@
     updateRecommendation();
   });
 
-  function activeGridAndPage() {
-    const { badgeW, badgeH, margin, gap } = currentDims();
+  // Builds the grid/page context for ONE template's own saved size/orientation/fill-remaining
+  // settings (margin and gap stay global — a print-job/paper preference, not a per-model one).
+  function computeCtxDims(t) {
+    const margin = Math.max(0, (parseFloat(marginMmInput.value) || 0.8) * CM_TO_MM);
+    const gap = Math.max(0, (parseFloat(gapMmInput.value) || 0.4) * CM_TO_MM);
+    const badgeW = Math.max(1, (t.badgeW || 9) * CM_TO_MM);
+    const badgeH = Math.max(1, (t.badgeH || 5.4) * CM_TO_MM);
     const portrait = computeGrid(A4.w, A4.h, badgeW, badgeH, margin, gap);
     const landscape = computeGrid(A4.h, A4.w, badgeW, badgeH, margin, gap);
-    let orientation = orientationSel.value;
+    let orientation = t.orientation || "auto";
     if (orientation === "auto") orientation = portrait.total >= landscape.total ? "retrato" : "paisagem";
     const grid = orientation === "retrato" ? portrait : landscape;
     const pageWmm = orientation === "retrato" ? A4.w : A4.h;
     const pageHmm = orientation === "retrato" ? A4.h : A4.w;
 
     let strips = null, smallW = null, smallH = null;
-    if (fillRemainingChk.checked) {
-      ({ smallW, smallH } = smallDims());
+    if (t.fillRemaining) {
+      smallW = Math.max(1, (t.smallW || 4.5) * CM_TO_MM);
+      smallH = Math.max(1, (t.smallH || 2.7) * CM_TO_MM);
       strips = computeFillStrips(pageWmm, pageHmm, margin, gap, grid, badgeW, badgeH, smallW, smallH);
     }
 
@@ -1660,54 +1741,67 @@
     return pageCanvas;
   }
 
+  // Each template keeps its own badge size/orientation/fill-remaining, so it wouldn't make
+  // sense to pack different models into one shared grid — instead every template gets its
+  // own page(s), at its own size, appended one after another (margin/gap/DPI stay shared).
   generateBtn.addEventListener("click", () => {
     snapshotActive(); // make sure the active template's latest edits are captured too
-    const allEntries = [];
-    templates.forEach((t) => {
-      if (!t.fields || !t.fields.length) return;
-      t.instances.forEach((inst) => allEntries.push({ template: t, inst }));
-    });
-    if (!allEntries.length) return;
-    const ctxDims = activeGridAndPage();
     const dpi = parseInt(dpiSel.value, 10) || 300;
-    if (ctxDims.grid.total === 0) {
-      recBox.innerHTML = "O crachá é maior que a folha com essas margens — reduza o tamanho ou as margens.";
+    pagesOutput.innerHTML = "";
+    let pageNum = 0;
+    let anyRendered = false;
+    let anyTooBig = false;
+
+    templates.forEach((t) => {
+      if (!t.fields || !t.fields.length || !t.instances.length) return;
+      const ctxDims = computeCtxDims(t);
+      if (ctxDims.grid.total === 0) { anyTooBig = true; return; }
+
+      const perPagePrimary = ctxDims.grid.total;
+      const secondaryPerPage = ctxDims.strips ? (ctxDims.strips.right.grid.total + ctxDims.strips.bottom.grid.total) : 0;
+      const perPageTotal = perPagePrimary + secondaryPerPage;
+      const entries = t.instances.map((inst) => ({ template: t, inst }));
+      const pagesForT = Math.ceil(entries.length / perPageTotal);
+      let cursor = 0;
+
+      for (let p = 0; p < pagesForT; p++) {
+        anyRendered = true;
+        pageNum += 1;
+        const primaryChunk = entries.slice(cursor, cursor + perPagePrimary);
+        cursor += primaryChunk.length;
+        const secondaryChunk = entries.slice(cursor, cursor + secondaryPerPage);
+        cursor += secondaryChunk.length;
+        const pageCanvas = renderPage(primaryChunk, secondaryChunk, ctxDims, dpi);
+
+        const card = document.createElement("div");
+        card.className = "page-card";
+        const img = document.createElement("img");
+        img.src = pageCanvas.toDataURL("image/png");
+        const label = document.createElement("span");
+        const totalOnPage = primaryChunk.length + secondaryChunk.length;
+        label.textContent = `${t.name} · pág. ${p + 1}/${pagesForT} · ${totalOnPage} crachá(s)` +
+          (secondaryChunk.length ? ` (${primaryChunk.length} + ${secondaryChunk.length} menores)` : "");
+        const btn = document.createElement("button");
+        btn.className = "btn secondary tiny";
+        btn.textContent = "Baixar página";
+        const fileNum = pageNum;
+        btn.addEventListener("click", () => {
+          pageCanvas.toBlob((blob) => {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob); a.download = `folha_${fileNum}.png`; a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+          }, "image/png");
+        });
+        card.appendChild(img); card.appendChild(label); card.appendChild(btn);
+        pagesOutput.appendChild(card);
+      }
+    });
+
+    if (!anyRendered) {
+      setStatus(anyTooBig ? "O crachá é maior que a folha com essas margens em algum modelo — reduza o tamanho ou as margens." : "Nada pra gerar ainda", false);
       return;
     }
-    pagesOutput.innerHTML = "";
-    const perPagePrimary = ctxDims.grid.total;
-    const secondaryPerPage = ctxDims.strips ? (ctxDims.strips.right.grid.total + ctxDims.strips.bottom.grid.total) : 0;
-    const perPageTotal = perPagePrimary + secondaryPerPage;
-    const totalPages = Math.ceil(allEntries.length / perPageTotal);
-    let cursor = 0;
-    for (let p = 0; p < totalPages; p++) {
-      const primaryChunk = allEntries.slice(cursor, cursor + perPagePrimary);
-      cursor += primaryChunk.length;
-      const secondaryChunk = allEntries.slice(cursor, cursor + secondaryPerPage);
-      cursor += secondaryChunk.length;
-      const pageCanvas = renderPage(primaryChunk, secondaryChunk, ctxDims, dpi);
-      const card = document.createElement("div");
-      card.className = "page-card";
-      const img = document.createElement("img");
-      img.src = pageCanvas.toDataURL("image/png");
-      const label = document.createElement("span");
-      const totalOnPage = primaryChunk.length + secondaryChunk.length;
-      label.textContent = `Página ${p + 1} de ${totalPages} · ${totalOnPage} crachá(s)` +
-        (secondaryChunk.length ? ` (${primaryChunk.length} + ${secondaryChunk.length} menores)` : "");
-      const btn = document.createElement("button");
-      btn.className = "btn secondary tiny";
-      btn.textContent = "Baixar página";
-      btn.addEventListener("click", () => {
-        pageCanvas.toBlob((blob) => {
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob); a.download = `folha_${p+1}.png`; a.click();
-          setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-        }, "image/png");
-      });
-      card.appendChild(img); card.appendChild(label); card.appendChild(btn);
-      pagesOutput.appendChild(card);
-    }
-    setStatus(`${totalPages} folha(s) gerada(s)`, true);
+    setStatus(`${pageNum} folha(s) gerada(s)` + (anyTooBig ? " — algum modelo não coube e foi pulado" : ""), true);
   });
 })();
 </script>

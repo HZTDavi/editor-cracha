@@ -8,10 +8,12 @@ Abra **`editor_web.html`** direto no navegador — funciona 100% localmente (nen
 
 ### O que dá pra fazer
 - Detectar e remover o texto antigo do crachá, reconstruindo o fundo (inclusive em fundos texturizados), só dentro da área selecionada.
-- Reposicionar e redimensionar o texto (alças nos cantos), com controle manual de tamanho da letra.
+- Reposicionar e redimensionar o texto (alças nos cantos), com controle manual de tamanho e cor da letra.
 - 7 fontes prontas + carregar uma fonte personalizada (`.ttf`/`.otf`/`.woff`) do seu computador.
-- Vários modelos de crachá ao mesmo tempo (abas), cada um com sua lista de pessoas.
-- Gerar folha(s) A4 combinando todos os modelos, com paginação automática e opção de preencher o espaço sobrando com crachás menores.
+- Vários modelos de crachá ao mesmo tempo (abas), cada um com sua lista de pessoas e **seu próprio tamanho físico** (não compartilhado — editar o tamanho de um modelo não muda o dos outros).
+- Adicionar vários crachás de uma vez (informando a quantidade) ou colando uma lista (uma linha por crachá, colunas separadas por Tab — cole direto de uma planilha).
+- Gerar folha(s) A4, uma sequência de páginas por modelo (cada um no seu próprio tamanho/orientação), com paginação automática e opção de preencher o espaço sobrando com crachás menores.
+- Responsivo — funciona de celular a desktop.
 - Ctrl+Z desfaz a última alteração; Shift+Enter quebra linha nos campos de texto.
 
 ## Estrutura do projeto
