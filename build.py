@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Embute as fontes (base64) no template e gera editor_web.html.
+"""Embute as fontes (base64) no template e gera index.html.
 
 Uso:
     python3 build.py
@@ -34,8 +34,8 @@ def data_uri(path):
 
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
-    template_path = os.path.join(here, "editor_web_template.html")
-    output_path = os.path.join(here, "editor_web.html")
+    template_path = os.path.join(here, "index_template.html")
+    output_path = os.path.join(here, "index.html")
 
     with open(template_path, "r", encoding="utf-8") as f:
         content = f.read()
